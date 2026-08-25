@@ -102,20 +102,38 @@ export async function addBooking(
     throw new Error('Supabase is not configured. Please set your credentials in .env.local');
   }
 
-  const { data: created, error } = await supabase
+  const payload: any = {
+    ...data,
+    client_no: data.client_no?.trim() || null,
+    car_count: Number(data.car_count) || 1,
+    assigned_detailer: data.assigned_detailer?.trim() || 'Unassigned',
+    service: normalizeService(data.service) || 'interior_silver',
+    status: 'scheduled',
+  };
+
+  let { data: created, error } = await supabase
     .from('bookings')
-    .insert([
-      {
-        ...data,
-        client_no: data.client_no?.trim() || null,
-        car_count: Number(data.car_count) || 1,
-        assigned_detailer: data.assigned_detailer?.trim() || 'Unassigned',
-        service: normalizeService(data.service) || 'interior_silver',
-        status: 'scheduled',
-      },
-    ])
+    .insert([payload])
     .select()
     .single();
+
+  // If column doesn't exist in Supabase table schema cache yet, retry with base columns
+  if (error && error.message?.includes('schema cache')) {
+    console.warn(
+      '[Supabase schema warning]: New columns missing from Supabase table. Retrying with basic fields. Please run the ALTER TABLE script in Supabase SQL editor.'
+    );
+    const { client_no, car_count, assigned_detailer, ...basePayload } = payload;
+    const retry = await supabase
+      .from('bookings')
+      .insert([basePayload])
+      .select()
+      .single();
+
+    if (retry.error) {
+      throw new Error(retry.error.message);
+    }
+    return { ...retry.data, client_no, car_count, assigned_detailer } as Booking;
+  }
 
   if (error) {
     console.error('[Supabase addBooking error]:', error.message);
@@ -144,12 +162,31 @@ export async function updateBooking(
     ...(data.assigned_detailer !== undefined ? { assigned_detailer: data.assigned_detailer?.trim() || 'Unassigned' } : {}),
   };
 
-  const { data: updated, error } = await supabase
+  let { data: updated, error } = await supabase
     .from('bookings')
     .update(updatePayload)
     .eq('id', id)
     .select()
     .single();
+
+  // If column doesn't exist in Supabase table schema cache yet, retry with base columns
+  if (error && error.message?.includes('schema cache')) {
+    console.warn(
+      '[Supabase schema warning]: New columns missing from Supabase table. Retrying update with basic fields.'
+    );
+    const { client_no, car_count, assigned_detailer, ...basePayload } = updatePayload;
+    const retry = await supabase
+      .from('bookings')
+      .update(basePayload)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (retry.error) {
+      throw new Error(retry.error.message);
+    }
+    return { ...retry.data, client_no, car_count, assigned_detailer } as Booking;
+  }
 
   if (error) {
     console.error('[Supabase updateBooking error]:', error.message);

@@ -22,6 +22,8 @@ import {
   CheckCircle2,
   AlertCircle,
   Clock3,
+  Phone,
+  UserCheck,
 } from 'lucide-react';
 
 interface BookingListProps {
@@ -172,18 +174,50 @@ export default function BookingList({
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                 {/* Left & Middle details */}
                 <div className="flex-1 space-y-3">
-                  {/* Row 1: Customer Name + Badges */}
+                  {/* Row 1: Customer Name + Phone + Badges */}
                   <div className="flex flex-wrap items-center gap-2">
                     <h3 className="text-base font-semibold text-charcoal tracking-tight">
                       {booking.customer_name}
                     </h3>
+
+                    {/* Client Phone Link */}
+                    {booking.client_no && (
+                      <a
+                        href={`tel:${booking.client_no.replace(/[^0-9+]/g, '')}`}
+                        className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-sage-50 text-sage-700 hover:text-sage-900 border border-sage-200/80 transition-colors"
+                        title={`Call client: ${booking.client_no}`}
+                      >
+                        <Phone className="w-3 h-3 text-sage-600" />
+                        <span>{booking.client_no}</span>
+                      </a>
+                    )}
+
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sage-50 text-sage-800 border border-sage-200">
                       {SERVICE_LABELS[booking.service] || booking.service}
                     </span>
+
+                    {/* Vehicle Type & Count */}
                     <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-charcoal-surface text-charcoal-muted border border-charcoal-border/50">
                       <Car className="w-3 h-3 text-charcoal-muted" />
-                      {CAR_TYPE_LABELS[booking.car_type] || booking.car_type}
+                      <span>
+                        {booking.car_count && booking.car_count > 1 ? `${booking.car_count}x ` : ''}
+                        {CAR_TYPE_LABELS[booking.car_type] || booking.car_type}
+                      </span>
                     </span>
+
+                    {/* Assigned Detailer */}
+                    {booking.assigned_detailer && booking.assigned_detailer !== 'Unassigned' ? (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200/60">
+                        <UserCheck className="w-3 h-3 text-purple-600" />
+                        <span>{booking.assigned_detailer}</span>
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200/60">
+                        <UserCheck className="w-3 h-3 text-amber-600" />
+                        <span>Unassigned</span>
+                      </span>
+                    )}
+
                     {getStatusBadge(booking.status)}
                   </div>
 

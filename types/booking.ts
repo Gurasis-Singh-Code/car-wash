@@ -11,6 +11,9 @@ export type BookingStatus = 'scheduled' | 'completed' | 'cancelled';
 export interface Booking {
   id: string;
   customer_name: string;
+  client_no?: string;
+  car_count?: number;
+  assigned_detailer?: string;
   service: ServiceType;
   address: string;
   booking_date: string;
@@ -20,6 +23,15 @@ export interface Booking {
   has_water: boolean;
   status: BookingStatus;
 }
+
+export const DEFAULT_DETAILERS = [
+  'Unassigned',
+  'Alex Rivera',
+  'Jordan Smith',
+  'Marcus Vance',
+  'Sam Taylor',
+  'Elena Rostova',
+] as const;
 
 export interface BookingStats {
   today_count: number;

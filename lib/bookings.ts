@@ -107,6 +107,9 @@ export async function addBooking(
     .insert([
       {
         ...data,
+        client_no: data.client_no?.trim() || null,
+        car_count: Number(data.car_count) || 1,
+        assigned_detailer: data.assigned_detailer?.trim() || 'Unassigned',
         service: normalizeService(data.service) || 'interior_silver',
         status: 'scheduled',
       },
@@ -133,9 +136,12 @@ export async function updateBooking(
     throw new Error('Supabase is not configured. Please set your credentials in .env.local');
   }
 
-  const updatePayload = {
+  const updatePayload: any = {
     ...data,
     ...(data.service ? { service: normalizeService(data.service) } : {}),
+    ...(data.client_no !== undefined ? { client_no: data.client_no?.trim() || null } : {}),
+    ...(data.car_count !== undefined ? { car_count: Number(data.car_count) || 1 } : {}),
+    ...(data.assigned_detailer !== undefined ? { assigned_detailer: data.assigned_detailer?.trim() || 'Unassigned' } : {}),
   };
 
   const { data: updated, error } = await supabase

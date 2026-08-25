@@ -7,6 +7,7 @@ import {
   ServiceType,
   SERVICE_LABELS,
   CAR_TYPE_LABELS,
+  DEFAULT_DETAILERS,
 } from '@/types/booking';
 import {
   Calendar,
@@ -19,6 +20,9 @@ import {
   CheckCircle2,
   AlertCircle,
   PlusCircle,
+  Phone,
+  UserCheck,
+  Hash,
 } from 'lucide-react';
 
 export type BookingFormData = Omit<Booking, 'id' | 'status'>;
@@ -65,6 +69,12 @@ export default function BookingForm({
   const todayDateString = new Date().toISOString().split('T')[0];
 
   const [customerName, setCustomerName] = useState(initialData?.customer_name || '');
+  const [clientNo, setClientNo] = useState(initialData?.client_no || '');
+  const [carCount, setCarCount] = useState<number>(initialData?.car_count || 1);
+  const [assignedDetailer, setAssignedDetailer] = useState(
+    initialData?.assigned_detailer || 'Unassigned'
+  );
+  const [customDetailer, setCustomDetailer] = useState('');
   const [service, setService] = useState<ServiceType>(initialData?.service || 'interior_silver');
   const [address, setAddress] = useState(initialData?.address || '');
   const [bookingDate, setBookingDate] = useState(initialData?.booking_date || todayDateString);
@@ -98,6 +108,10 @@ export default function BookingForm({
       newErrors.booking_time = 'Booking time is required';
     }
 
+    if (!carCount || carCount < 1) {
+      newErrors.car_count = 'Must specify at least 1 vehicle';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -110,8 +124,16 @@ export default function BookingForm({
       return;
     }
 
+    const detailerValue =
+      assignedDetailer === 'Other' && customDetailer.trim()
+        ? customDetailer.trim()
+        : assignedDetailer;
+
     const payload: BookingFormData = {
       customer_name: customerName.trim(),
+      client_no: clientNo.trim() || undefined,
+      car_count: Number(carCount) || 1,
+      assigned_detailer: detailerValue || 'Unassigned',
       service,
       address: address.trim(),
       booking_date: bookingDate,
@@ -127,8 +149,7 @@ export default function BookingForm({
       if (onSubmit) {
         await onSubmit(payload);
       } else {
-        // Stub logger if no callback provided
-        console.log('[BookingForm stub submit]', payload);
+        console.log('[BookingForm submit]', payload);
       }
 
       setSuccessMessage(
@@ -140,6 +161,10 @@ export default function BookingForm({
       // If creating new (not editing), clear form
       if (!isEditing) {
         setCustomerName('');
+        setClientNo('');
+        setCarCount(1);
+        setAssignedDetailer('Unassigned');
+        setCustomDetailer('');
         setAddress('');
         setService('interior_silver');
         setCarType('sedan');
@@ -153,27 +178,31 @@ export default function BookingForm({
       setTimeout(() => {
         setSuccessMessage(null);
       }, 4000);
-    } catch (err) {
-      setErrors({ form: 'An unexpected error occurred while saving.' });
+    } catch (err: any) {
+      setErrors({ form: err?.message || 'An unexpected error occurred while saving.' });
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  // Check if current assignedDetailer is in standard list
+  const isCustomDetailer =
+    assignedDetailer === 'Other' ||
+    (!DEFAULT_DETAILERS.includes(assignedDetailer as any) && assignedDetailer !== '');
+
   return (
-    <div className="w-full max-w-[480px] bg-white rounded-xl p-6 sm:p-7 border border-charcoal-border/60 shadow-soft-sm">
-      <div className="flex items-center gap-3 pb-5 mb-5 border-b border-charcoal-border/40">
-        <div className="w-9 h-9 rounded-xl bg-sage-50 text-sage-600 flex items-center justify-center border border-sage-100">
-          <PlusCircle className="w-5 h-5" />
-        </div>
+    <div className="bg-white rounded-2xl p-6 sm:p-7 border border-charcoal-border/60 shadow-soft-md w-full max-w-2xl mx-auto">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6 pb-4 border-b border-charcoal-border/40">
         <div>
-          <h2 className="text-lg font-semibold text-charcoal tracking-tight">
-            {isEditing ? 'Edit Appointment' : 'New Appointment'}
+          <h2 className="text-lg sm:text-xl font-bold text-charcoal tracking-tight flex items-center gap-2">
+            <PlusCircle className="w-5 h-5 text-sage-600" />
+            <span>{isEditing ? 'Edit Appointment' : 'New Appointment'}</span>
           </h2>
-          <p className="text-xs text-charcoal-muted">
+          <p className="text-xs text-charcoal-muted mt-0.5">
             {isEditing
-              ? 'Update existing booking details'
-              : 'Schedule a mobile wash & detailing session'}
+              ? 'Update existing appointment details and assignments'
+              : 'Enter customer, vehicle, and dispatch details'}
           </p>
         </div>
       </div>
@@ -195,63 +224,206 @@ export default function BookingForm({
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-        {/* Customer Name */}
-        <div>
-          <label
-            htmlFor="customer_name"
-            className="block text-xs font-semibold uppercase tracking-wider text-charcoal mb-1.5"
-          >
-            Customer Name <span className="text-red-500">*</span>
-          </label>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-charcoal-muted">
-              <User className="w-4 h-4 text-sage-600" />
+        {/* Row 1: Customer Name & Client Phone / No. */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          {/* Customer Name */}
+          <div>
+            <label
+              htmlFor="customer_name"
+              className="block text-xs font-semibold uppercase tracking-wider text-charcoal mb-1.5"
+            >
+              Customer Name <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-charcoal-muted">
+                <User className="w-4 h-4 text-sage-600" />
+              </div>
+              <input
+                id="customer_name"
+                type="text"
+                value={customerName}
+                onChange={(e) => {
+                  setCustomerName(e.target.value);
+                  if (errors.customer_name) setErrors((prev) => ({ ...prev, customer_name: '' }));
+                }}
+                placeholder="e.g. Sarah Jenkins"
+                className={`w-full pl-10 pr-3.5 py-2.5 rounded-xl text-sm bg-[#FAF9F6] border ${
+                  errors.customer_name
+                    ? 'border-red-400 focus:border-red-500'
+                    : 'border-charcoal-border focus:border-sage-500'
+                } text-charcoal placeholder:text-charcoal-light/70 focus:bg-white transition-colors`}
+              />
             </div>
-            <input
-              id="customer_name"
-              type="text"
-              value={customerName}
-              onChange={(e) => {
-                setCustomerName(e.target.value);
-                if (errors.customer_name) setErrors((prev) => ({ ...prev, customer_name: '' }));
-              }}
-              placeholder="e.g. Sarah Jenkins"
-              className={`w-full pl-10 pr-3.5 py-2.5 rounded-xl text-sm bg-[#FAF9F6] border ${
-                errors.customer_name
-                  ? 'border-red-400 focus:border-red-500'
-                  : 'border-charcoal-border focus:border-sage-500'
-              } text-charcoal placeholder:text-charcoal-light/70 focus:bg-white transition-colors`}
-            />
+            {errors.customer_name && (
+              <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" /> {errors.customer_name}
+              </p>
+            )}
           </div>
-          {errors.customer_name && (
-            <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
-              <AlertCircle className="w-3 h-3" /> {errors.customer_name}
-            </p>
-          )}
+
+          {/* Client No. / Phone */}
+          <div>
+            <label
+              htmlFor="client_no"
+              className="block text-xs font-semibold uppercase tracking-wider text-charcoal mb-1.5"
+            >
+              Client No. / Phone
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-charcoal-muted">
+                <Phone className="w-4 h-4 text-sage-600" />
+              </div>
+              <input
+                id="client_no"
+                type="tel"
+                value={clientNo}
+                onChange={(e) => setClientNo(e.target.value)}
+                placeholder="e.g. (555) 019-2834"
+                className="w-full pl-10 pr-3.5 py-2.5 rounded-xl text-sm bg-[#FAF9F6] border border-charcoal-border text-charcoal placeholder:text-charcoal-light/70 focus:border-sage-500 focus:bg-white transition-colors"
+              />
+            </div>
+          </div>
         </div>
 
-        {/* Service Type */}
-        <div>
-          <label
-            htmlFor="service"
-            className="block text-xs font-semibold uppercase tracking-wider text-charcoal mb-1.5"
-          >
-            Service Package <span className="text-red-500">*</span>
-          </label>
-          <select
-            id="service"
-            value={service}
-            onChange={(e) => setService(e.target.value as ServiceType)}
-            className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-[#FAF9F6] border border-charcoal-border text-charcoal focus:border-sage-500 focus:bg-white transition-colors cursor-pointer"
-          >
-            <option value="interior_silver">{SERVICE_LABELS.interior_silver}</option>
-            <option value="interior_gold">{SERVICE_LABELS.interior_gold}</option>
-            <option value="full_silver">{SERVICE_LABELS.full_silver}</option>
-            <option value="full_gold">{SERVICE_LABELS.full_gold}</option>
-          </select>
+        {/* Row 2: Service Package & Assigned Detailer */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          {/* Service Type */}
+          <div>
+            <label
+              htmlFor="service"
+              className="block text-xs font-semibold uppercase tracking-wider text-charcoal mb-1.5"
+            >
+              Service Package <span className="text-red-500">*</span>
+            </label>
+            <select
+              id="service"
+              value={service}
+              onChange={(e) => setService(e.target.value as ServiceType)}
+              className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-[#FAF9F6] border border-charcoal-border text-charcoal focus:border-sage-500 focus:bg-white transition-colors cursor-pointer"
+            >
+              <option value="interior_silver">{SERVICE_LABELS.interior_silver}</option>
+              <option value="interior_gold">{SERVICE_LABELS.interior_gold}</option>
+              <option value="full_silver">{SERVICE_LABELS.full_silver}</option>
+              <option value="full_gold">{SERVICE_LABELS.full_gold}</option>
+            </select>
+          </div>
+
+          {/* Assigned Detailer */}
+          <div>
+            <label
+              htmlFor="assigned_detailer"
+              className="block text-xs font-semibold uppercase tracking-wider text-charcoal mb-1.5"
+            >
+              Assign Detailer
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-charcoal-muted">
+                <UserCheck className="w-4 h-4 text-sage-600" />
+              </div>
+              <select
+                id="assigned_detailer"
+                value={isCustomDetailer && assignedDetailer !== 'Other' ? 'Other' : assignedDetailer}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setAssignedDetailer(val);
+                  if (val !== 'Other') setCustomDetailer('');
+                }}
+                className="w-full pl-10 pr-3.5 py-2.5 rounded-xl text-sm bg-[#FAF9F6] border border-charcoal-border text-charcoal focus:border-sage-500 focus:bg-white transition-colors cursor-pointer"
+              >
+                {DEFAULT_DETAILERS.map((name) => (
+                  <option key={name} value={name}>
+                    {name === 'Unassigned' ? '— Unassigned —' : name}
+                  </option>
+                ))}
+                <option value="Other">Other / Custom Name...</option>
+              </select>
+            </div>
+
+            {/* Custom Detailer Input if "Other" is selected */}
+            {(assignedDetailer === 'Other' || (isCustomDetailer && assignedDetailer !== 'Unassigned')) && (
+              <input
+                type="text"
+                value={customDetailer || (assignedDetailer !== 'Other' ? assignedDetailer : '')}
+                onChange={(e) => {
+                  setCustomDetailer(e.target.value);
+                  setAssignedDetailer('Other');
+                }}
+                placeholder="Enter detailer name..."
+                className="mt-2 w-full px-3.5 py-2 rounded-xl text-xs bg-[#FAF9F6] border border-sage-300 text-charcoal placeholder:text-charcoal-light/70 focus:border-sage-500 focus:bg-white transition-colors animate-fade-in"
+              />
+            )}
+          </div>
         </div>
 
-        {/* Address */}
+        {/* Row 3: Vehicle Type & Number of Cars */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          {/* Car Type */}
+          <div>
+            <label
+              htmlFor="car_type"
+              className="block text-xs font-semibold uppercase tracking-wider text-charcoal mb-1.5"
+            >
+              Vehicle Type <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-charcoal-muted">
+                <Car className="w-4 h-4 text-sage-600" />
+              </div>
+              <select
+                id="car_type"
+                value={carType}
+                onChange={(e) => setCarType(e.target.value as CarType)}
+                className="w-full pl-10 pr-3.5 py-2.5 rounded-xl text-sm bg-[#FAF9F6] border border-charcoal-border text-charcoal focus:border-sage-500 focus:bg-white transition-colors cursor-pointer"
+              >
+                <option value="sedan">{CAR_TYPE_LABELS.sedan}</option>
+                <option value="hatchback">{CAR_TYPE_LABELS.hatchback}</option>
+                <option value="suv">{CAR_TYPE_LABELS.suv}</option>
+                <option value="van">{CAR_TYPE_LABELS.van}</option>
+                <option value="mini_truck">{CAR_TYPE_LABELS.mini_truck}</option>
+                <option value="other">{CAR_TYPE_LABELS.other}</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Number of Cars */}
+          <div>
+            <label
+              htmlFor="car_count"
+              className="block text-xs font-semibold uppercase tracking-wider text-charcoal mb-1.5"
+            >
+              No. of Cars / Vehicles <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-charcoal-muted">
+                <Hash className="w-4 h-4 text-sage-600" />
+              </div>
+              <input
+                id="car_count"
+                type="number"
+                min={1}
+                max={20}
+                value={carCount}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value, 10);
+                  setCarCount(isNaN(val) ? 1 : Math.max(1, val));
+                  if (errors.car_count) setErrors((prev) => ({ ...prev, car_count: '' }));
+                }}
+                className={`w-full pl-10 pr-3.5 py-2.5 rounded-xl text-sm bg-[#FAF9F6] border ${
+                  errors.car_count
+                    ? 'border-red-400 focus:border-red-500'
+                    : 'border-charcoal-border focus:border-sage-500'
+                } text-charcoal focus:bg-white transition-colors`}
+              />
+            </div>
+            {errors.car_count && (
+              <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" /> {errors.car_count}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Row 4: Service Address */}
         <div>
           <label
             htmlFor="address"
@@ -286,7 +458,7 @@ export default function BookingForm({
           )}
         </div>
 
-        {/* Date and Time (2-col grid) */}
+        {/* Row 5: Date and Time (2-col grid) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
           {/* Date Picker */}
           <div>
@@ -355,34 +527,6 @@ export default function BookingForm({
           </div>
         </div>
 
-        {/* Car Type */}
-        <div>
-          <label
-            htmlFor="car_type"
-            className="block text-xs font-semibold uppercase tracking-wider text-charcoal mb-1.5"
-          >
-            Vehicle Type <span className="text-red-500">*</span>
-          </label>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-charcoal-muted">
-              <Car className="w-4 h-4 text-sage-600" />
-            </div>
-            <select
-              id="car_type"
-              value={carType}
-              onChange={(e) => setCarType(e.target.value as CarType)}
-              className="w-full pl-10 pr-3.5 py-2.5 rounded-xl text-sm bg-[#FAF9F6] border border-charcoal-border text-charcoal focus:border-sage-500 focus:bg-white transition-colors cursor-pointer"
-            >
-              <option value="sedan">{CAR_TYPE_LABELS.sedan}</option>
-              <option value="hatchback">{CAR_TYPE_LABELS.hatchback}</option>
-              <option value="suv">{CAR_TYPE_LABELS.suv}</option>
-              <option value="van">{CAR_TYPE_LABELS.van}</option>
-              <option value="mini_truck">{CAR_TYPE_LABELS.mini_truck}</option>
-              <option value="other">{CAR_TYPE_LABELS.other}</option>
-            </select>
-          </div>
-        </div>
-
         {/* On-site Utility Toggles */}
         <div className="pt-2 space-y-3">
           <span className="block text-xs font-semibold uppercase tracking-wider text-charcoal">
@@ -392,7 +536,11 @@ export default function BookingForm({
           {/* Power toggle */}
           <label className="flex items-center justify-between p-3 rounded-xl bg-[#FAF9F6] border border-charcoal-border/70 hover:border-sage-300 transition-colors cursor-pointer">
             <div className="flex items-center gap-2.5">
-              <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${hasPower ? 'bg-amber-100 text-amber-700' : 'bg-charcoal-border/50 text-charcoal-muted'}`}>
+              <div
+                className={`w-7 h-7 rounded-lg flex items-center justify-center ${
+                  hasPower ? 'bg-amber-100 text-amber-700' : 'bg-charcoal-border/50 text-charcoal-muted'
+                }`}
+              >
                 <Zap className="w-4 h-4" />
               </div>
               <div>
@@ -416,7 +564,11 @@ export default function BookingForm({
           {/* Water toggle */}
           <label className="flex items-center justify-between p-3 rounded-xl bg-[#FAF9F6] border border-charcoal-border/70 hover:border-sage-300 transition-colors cursor-pointer">
             <div className="flex items-center gap-2.5">
-              <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${hasWater ? 'bg-sky-100 text-sky-700' : 'bg-charcoal-border/50 text-charcoal-muted'}`}>
+              <div
+                className={`w-7 h-7 rounded-lg flex items-center justify-center ${
+                  hasWater ? 'bg-sky-100 text-sky-700' : 'bg-charcoal-border/50 text-charcoal-muted'
+                }`}
+              >
                 <Droplet className="w-4 h-4" />
               </div>
               <div>

@@ -8,14 +8,22 @@ create type car_type as enum ('sedan','hatchback','suv','van','mini_truck','othe
 create type service_type as enum ('interior','full','interior_silver','interior_gold','full_silver','full_gold');
 create type booking_status as enum ('scheduled','completed','cancelled');
 
--- Migration helper for existing databases:
--- alter type service_type add value if not exists 'interior';
--- alter type service_type add value if not exists 'full';
+-- Migration helper for existing databases (run if table already exists):
+-- alter table bookings add column if not exists client_no text;
+-- alter table bookings add column if not exists car_count integer not null default 1;
+-- alter table bookings add column if not exists assigned_detailer text default 'Unassigned';
+-- alter type service_type add value if not exists 'interior_silver';
+-- alter type service_type add value if not exists 'interior_gold';
+-- alter type service_type add value if not exists 'full_silver';
+-- alter type service_type add value if not exists 'full_gold';
 
 -- Bookings Table
 create table bookings (
   id uuid primary key default gen_random_uuid(),
   customer_name text not null,
+  client_no text,
+  car_count integer not null default 1,
+  assigned_detailer text default 'Unassigned',
   service service_type not null,
   address text not null,
   booking_date date not null,

@@ -7,7 +7,6 @@ import {
   ServiceType,
   SERVICE_LABELS,
   CAR_TYPE_LABELS,
-  DEFAULT_DETAILERS,
 } from '@/types/booking';
 import {
   Calendar,
@@ -72,9 +71,8 @@ export default function BookingForm({
   const [clientNo, setClientNo] = useState(initialData?.client_no || '');
   const [carCount, setCarCount] = useState<number>(initialData?.car_count || 1);
   const [assignedDetailer, setAssignedDetailer] = useState(
-    initialData?.assigned_detailer || 'Unassigned'
+    initialData?.assigned_detailer === 'Unassigned' ? '' : (initialData?.assigned_detailer || '')
   );
-  const [customDetailer, setCustomDetailer] = useState('');
   const [service, setService] = useState<ServiceType>(initialData?.service || 'interior_silver');
   const [address, setAddress] = useState(initialData?.address || '');
   const [bookingDate, setBookingDate] = useState(initialData?.booking_date || todayDateString);
@@ -124,16 +122,11 @@ export default function BookingForm({
       return;
     }
 
-    const detailerValue =
-      assignedDetailer === 'Other' && customDetailer.trim()
-        ? customDetailer.trim()
-        : assignedDetailer;
-
     const payload: BookingFormData = {
       customer_name: customerName.trim(),
       client_no: clientNo.trim() || undefined,
       car_count: Number(carCount) || 1,
-      assigned_detailer: detailerValue || 'Unassigned',
+      assigned_detailer: assignedDetailer.trim() || 'Unassigned',
       service,
       address: address.trim(),
       booking_date: bookingDate,
@@ -163,8 +156,7 @@ export default function BookingForm({
         setCustomerName('');
         setClientNo('');
         setCarCount(1);
-        setAssignedDetailer('Unassigned');
-        setCustomDetailer('');
+        setAssignedDetailer('');
         setAddress('');
         setService('interior_silver');
         setCarType('sedan');
@@ -185,11 +177,6 @@ export default function BookingForm({
     }
   };
 
-  // Check if current assignedDetailer is in standard list
-  const isCustomDetailer =
-    assignedDetailer === 'Other' ||
-    (!DEFAULT_DETAILERS.includes(assignedDetailer as any) && assignedDetailer !== '');
-
   return (
     <div className="bg-white rounded-2xl p-6 sm:p-7 border border-charcoal-border/60 shadow-soft-md w-full max-w-2xl mx-auto">
       {/* Header */}
@@ -201,7 +188,7 @@ export default function BookingForm({
           </h2>
           <p className="text-xs text-charcoal-muted mt-0.5">
             {isEditing
-              ? 'Update existing appointment details and assignments'
+              ? 'Update appointment details, client info, and assignments'
               : 'Enter customer, vehicle, and dispatch details'}
           </p>
         </div>
@@ -320,38 +307,15 @@ export default function BookingForm({
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-charcoal-muted">
                 <UserCheck className="w-4 h-4 text-sage-600" />
               </div>
-              <select
-                id="assigned_detailer"
-                value={isCustomDetailer && assignedDetailer !== 'Other' ? 'Other' : assignedDetailer}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setAssignedDetailer(val);
-                  if (val !== 'Other') setCustomDetailer('');
-                }}
-                className="w-full pl-10 pr-3.5 py-2.5 rounded-xl text-sm bg-[#FAF9F6] border border-charcoal-border text-charcoal focus:border-sage-500 focus:bg-white transition-colors cursor-pointer"
-              >
-                {DEFAULT_DETAILERS.map((name) => (
-                  <option key={name} value={name}>
-                    {name === 'Unassigned' ? '— Unassigned —' : name}
-                  </option>
-                ))}
-                <option value="Other">Other / Custom Name...</option>
-              </select>
-            </div>
-
-            {/* Custom Detailer Input if "Other" is selected */}
-            {(assignedDetailer === 'Other' || (isCustomDetailer && assignedDetailer !== 'Unassigned')) && (
               <input
+                id="assigned_detailer"
                 type="text"
-                value={customDetailer || (assignedDetailer !== 'Other' ? assignedDetailer : '')}
-                onChange={(e) => {
-                  setCustomDetailer(e.target.value);
-                  setAssignedDetailer('Other');
-                }}
-                placeholder="Enter detailer name..."
-                className="mt-2 w-full px-3.5 py-2 rounded-xl text-xs bg-[#FAF9F6] border border-sage-300 text-charcoal placeholder:text-charcoal-light/70 focus:border-sage-500 focus:bg-white transition-colors animate-fade-in"
+                value={assignedDetailer}
+                onChange={(e) => setAssignedDetailer(e.target.value)}
+                placeholder="e.g. Name of Detailer"
+                className="w-full pl-10 pr-3.5 py-2.5 rounded-xl text-sm bg-[#FAF9F6] border border-charcoal-border text-charcoal placeholder:text-charcoal-light/70 focus:border-sage-500 focus:bg-white transition-colors"
               />
-            )}
+            </div>
           </div>
         </div>
 

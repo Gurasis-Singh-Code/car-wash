@@ -24,15 +24,6 @@ export interface Booking {
   status: BookingStatus;
 }
 
-export const DEFAULT_DETAILERS = [
-  'Unassigned',
-  'Alex Rivera',
-  'Jordan Smith',
-  'Marcus Vance',
-  'Sam Taylor',
-  'Elena Rostova',
-] as const;
-
 export interface BookingStats {
   today_count: number;
   week_count: number;

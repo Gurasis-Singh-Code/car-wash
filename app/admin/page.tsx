@@ -111,29 +111,30 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-6 sm:space-y-8 animate-fade-in">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-charcoal-border/40">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 pb-2 border-b border-charcoal-border/40">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-charcoal">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-xl sm:text-3xl font-bold tracking-tight text-charcoal">
               Admin & Scheduling Management
             </h1>
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sage-100 text-sage-800">
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] sm:text-xs font-semibold bg-sage-100 text-sage-800">
               <ShieldCheck className="w-3.5 h-3.5 text-sage-700" />
               Admin Portal
             </span>
           </div>
-          <p className="text-sm text-charcoal-muted mt-1">
+          <p className="text-xs sm:text-sm text-charcoal-muted mt-0.5 sm:mt-1">
             Create new mobile detailing bookings and manage the full appointment registry.
           </p>
         </div>
 
-        <div>
+        <div className="flex items-center gap-2 self-end sm:self-auto">
           <button
             onClick={() => loadBookings()}
             className="p-2.5 rounded-xl border border-charcoal-border/60 bg-white hover:bg-sage-50 text-charcoal-muted hover:text-charcoal shadow-soft-sm transition-colors"
             title="Refresh Bookings"
+            aria-label="Refresh Bookings"
           >
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin text-sage-600' : ''}`} />
           </button>
@@ -142,7 +143,7 @@ export default function AdminPage() {
 
       {/* Setup notification banner if credentials not configured */}
       {!isConfigured && (
-        <div className="p-4 rounded-xl bg-sage-50/80 border border-sage-200 text-charcoal text-xs flex items-start gap-3">
+        <div className="p-3.5 sm:p-4 rounded-xl bg-sage-50/80 border border-sage-200 text-charcoal text-xs flex items-start gap-3">
           <div className="w-6 h-6 rounded-lg bg-sage-200/80 text-sage-800 flex items-center justify-center shrink-0 mt-0.5">
             <Sparkles className="w-3.5 h-3.5" />
           </div>
@@ -157,21 +158,21 @@ export default function AdminPage() {
 
       {/* Error alert */}
       {error && (
-        <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-center gap-2 animate-fade-in">
+        <div className="p-3.5 sm:p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-center gap-2 animate-fade-in">
           <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
       {/* Main Grid: Form on Left/Top, Booking List on Right */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-start">
         {/* Left Column: Booking Form */}
-        <div className="lg:col-span-5 flex justify-center lg:justify-start">
+        <div className="lg:col-span-5 flex justify-center lg:justify-start w-full">
           <BookingForm onSubmit={handleCreateBooking} />
         </div>
 
         {/* Right Column: Manage Bookings List */}
-        <div className="lg:col-span-7">
+        <div className="lg:col-span-7 w-full">
           <BookingList
             bookings={bookings}
             title="All Bookings"

@@ -196,15 +196,15 @@ export default function BookingForm({
   };
 
   return (
-    <div className="bg-white rounded-2xl p-6 sm:p-7 border border-charcoal-border/60 shadow-soft-md w-full max-w-2xl mx-auto">
+    <div className="bg-white rounded-2xl p-4 sm:p-7 border border-charcoal-border/60 shadow-soft-md w-full max-w-2xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6 pb-4 border-b border-charcoal-border/40">
+      <div className="flex items-center justify-between mb-4 sm:mb-6 pb-3 sm:pb-4 border-b border-charcoal-border/40">
         <div>
-          <h2 className="text-lg sm:text-xl font-bold text-charcoal tracking-tight flex items-center gap-2">
-            <PlusCircle className="w-5 h-5 text-sage-600" />
+          <h2 className="text-base sm:text-xl font-bold text-charcoal tracking-tight flex items-center gap-2">
+            <PlusCircle className="w-4 h-4 sm:w-5 sm:h-5 text-sage-600 shrink-0" />
             <span>{isEditing ? 'Edit Appointment' : 'New Appointment'}</span>
           </h2>
-          <p className="text-xs text-charcoal-muted mt-0.5">
+          <p className="text-[11px] sm:text-xs text-charcoal-muted mt-0.5">
             {isEditing
               ? 'Update appointment details, client info, and assignments'
               : 'Enter customer, vehicle, and dispatch details'}
@@ -214,7 +214,7 @@ export default function BookingForm({
 
       {/* Success Notification */}
       {successMessage && (
-        <div className="mb-5 p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium flex items-center gap-2 animate-fade-in">
+        <div className="mb-4 sm:mb-5 p-3 sm:p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium flex items-center gap-2 animate-fade-in">
           <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
           <span>{successMessage}</span>
         </div>
@@ -222,15 +222,15 @@ export default function BookingForm({
 
       {/* General Form Error */}
       {errors.form && (
-        <div className="mb-5 p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs font-medium flex items-center gap-2 animate-fade-in">
+        <div className="mb-4 sm:mb-5 p-3 sm:p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs font-medium flex items-center gap-2 animate-fade-in">
           <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
           <span>{errors.form}</span>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+      <form onSubmit={handleSubmit} className="space-y-3.5 sm:space-y-4" noValidate>
         {/* Row 1: Customer Name & Client Phone / No. */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5">
           {/* Customer Name */}
           <div>
             <label
@@ -252,7 +252,7 @@ export default function BookingForm({
                   if (errors.customer_name) setErrors((prev) => ({ ...prev, customer_name: '' }));
                 }}
                 placeholder="e.g. Sarah Jenkins"
-                className={`w-full pl-10 pr-3.5 py-2.5 rounded-xl text-sm bg-[#FAF9F6] border ${
+                className={`w-full pl-10 pr-3.5 py-2.5 rounded-xl text-base sm:text-sm bg-[#FAF9F6] border ${
                   errors.customer_name
                     ? 'border-red-400 focus:border-red-500'
                     : 'border-charcoal-border focus:border-sage-500'
@@ -284,7 +284,7 @@ export default function BookingForm({
                 value={clientNo}
                 onChange={(e) => setClientNo(e.target.value)}
                 placeholder="e.g. (555) 019-2834"
-                className="w-full pl-10 pr-3.5 py-2.5 rounded-xl text-sm bg-[#FAF9F6] border border-charcoal-border text-charcoal placeholder:text-charcoal-light/70 focus:border-sage-500 focus:bg-white transition-colors"
+                className="w-full pl-10 pr-3.5 py-2.5 rounded-xl text-base sm:text-sm bg-[#FAF9F6] border border-charcoal-border text-charcoal placeholder:text-charcoal-light/70 focus:border-sage-500 focus:bg-white transition-colors"
               />
             </div>
           </div>
@@ -304,7 +304,7 @@ export default function BookingForm({
               id="service"
               value={service}
               onChange={(e) => setService(e.target.value as ServiceType)}
-              className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-[#FAF9F6] border border-charcoal-border text-charcoal focus:border-sage-500 focus:bg-white transition-colors cursor-pointer"
+              className="w-full px-3.5 py-2.5 rounded-xl text-base sm:text-sm bg-[#FAF9F6] border border-charcoal-border text-charcoal focus:border-sage-500 focus:bg-white transition-colors cursor-pointer"
             >
               <option value="interior_silver">{SERVICE_LABELS.interior_silver}</option>
               <option value="interior_gold">{SERVICE_LABELS.interior_gold}</option>
@@ -331,14 +331,14 @@ export default function BookingForm({
                 value={assignedDetailer}
                 onChange={(e) => setAssignedDetailer(e.target.value)}
                 placeholder="e.g. Name of Detailer"
-                className="w-full pl-10 pr-3.5 py-2.5 rounded-xl text-sm bg-[#FAF9F6] border border-charcoal-border text-charcoal placeholder:text-charcoal-light/70 focus:border-sage-500 focus:bg-white transition-colors"
+                className="w-full pl-10 pr-3.5 py-2.5 rounded-xl text-base sm:text-sm bg-[#FAF9F6] border border-charcoal-border text-charcoal placeholder:text-charcoal-light/70 focus:border-sage-500 focus:bg-white transition-colors"
               />
             </div>
           </div>
         </div>
 
         {/* Row 3: Vehicle Type & Number of Cars */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5">
           {/* Car Type */}
           <div>
             <label
@@ -355,7 +355,7 @@ export default function BookingForm({
                 id="car_type"
                 value={carType}
                 onChange={(e) => setCarType(e.target.value as CarType)}
-                className="w-full pl-10 pr-3.5 py-2.5 rounded-xl text-sm bg-[#FAF9F6] border border-charcoal-border text-charcoal focus:border-sage-500 focus:bg-white transition-colors cursor-pointer"
+                className="w-full pl-10 pr-3.5 py-2.5 rounded-xl text-base sm:text-sm bg-[#FAF9F6] border border-charcoal-border text-charcoal focus:border-sage-500 focus:bg-white transition-colors cursor-pointer"
               >
                 <option value="sedan">{CAR_TYPE_LABELS.sedan}</option>
                 <option value="hatchback">{CAR_TYPE_LABELS.hatchback}</option>
@@ -390,7 +390,7 @@ export default function BookingForm({
                   setCarCount(isNaN(val) ? 1 : Math.max(1, val));
                   if (errors.car_count) setErrors((prev) => ({ ...prev, car_count: '' }));
                 }}
-                className={`w-full pl-10 pr-3.5 py-2.5 rounded-xl text-sm bg-[#FAF9F6] border ${
+                className={`w-full pl-10 pr-3.5 py-2.5 rounded-xl text-base sm:text-sm bg-[#FAF9F6] border ${
                   errors.car_count
                     ? 'border-red-400 focus:border-red-500'
                     : 'border-charcoal-border focus:border-sage-500'
@@ -426,7 +426,7 @@ export default function BookingForm({
                 if (errors.address) setErrors((prev) => ({ ...prev, address: '' }));
               }}
               placeholder="e.g. 742 Evergreen Terrace, Springfield"
-              className={`w-full pl-10 pr-3.5 py-2.5 rounded-xl text-sm bg-[#FAF9F6] border ${
+              className={`w-full pl-10 pr-3.5 py-2.5 rounded-xl text-base sm:text-sm bg-[#FAF9F6] border ${
                 errors.address
                   ? 'border-red-400 focus:border-red-500'
                   : 'border-charcoal-border focus:border-sage-500'
@@ -441,7 +441,7 @@ export default function BookingForm({
         </div>
 
         {/* Row 5: Date and Time (2-col grid) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5">
           {/* Date Picker */}
           <div>
             <label
@@ -460,7 +460,7 @@ export default function BookingForm({
                   setBookingDate(e.target.value);
                   if (errors.booking_date) setErrors((prev) => ({ ...prev, booking_date: '' }));
                 }}
-                className={`w-full px-3.5 py-2.5 rounded-xl text-sm bg-[#FAF9F6] border ${
+                className={`w-full px-3.5 py-2.5 rounded-xl text-base sm:text-sm bg-[#FAF9F6] border ${
                   errors.booking_date
                     ? 'border-red-400 focus:border-red-500'
                     : 'border-charcoal-border focus:border-sage-500'
@@ -489,7 +489,7 @@ export default function BookingForm({
                 setBookingTime(e.target.value);
                 if (errors.booking_time) setErrors((prev) => ({ ...prev, booking_time: '' }));
               }}
-              className={`w-full px-3.5 py-2.5 rounded-xl text-sm bg-[#FAF9F6] border ${
+              className={`w-full px-3.5 py-2.5 rounded-xl text-base sm:text-sm bg-[#FAF9F6] border ${
                 errors.booking_time
                   ? 'border-red-400 focus:border-red-500'
                   : 'border-charcoal-border focus:border-sage-500'
@@ -510,7 +510,7 @@ export default function BookingForm({
         </div>
 
         {/* On-site Utility Toggles */}
-        <div className="pt-2 space-y-3">
+        <div className="pt-1.5 space-y-2.5">
           <span className="block text-xs font-semibold uppercase tracking-wider text-charcoal">
             On-Site Utilities
           </span>
@@ -573,11 +573,11 @@ export default function BookingForm({
         </div>
 
         {/* Submit button */}
-        <div className="pt-3">
+        <div className="pt-2">
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full py-3 px-4 rounded-xl bg-sage-500 hover:bg-sage-600 active:scale-[0.99] text-white font-medium text-sm shadow-soft-sm transition-all duration-150 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+            className="w-full py-3.5 sm:py-3 px-4 rounded-xl bg-sage-500 hover:bg-sage-600 active:scale-[0.99] text-white font-semibold sm:font-medium text-sm shadow-soft-sm transition-all duration-150 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {isSubmitting ? (
               <span>Saving Appointment...</span>

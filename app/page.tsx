@@ -48,35 +48,36 @@ export default function HomePage() {
   }, [loadData]);
 
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-6 sm:space-y-8 animate-fade-in">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-charcoal-border/40">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 pb-2 border-b border-charcoal-border/40">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-charcoal">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-xl sm:text-3xl font-bold tracking-tight text-charcoal">
               Operations Dashboard
             </h1>
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sage-100 text-sage-800">
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] sm:text-xs font-semibold bg-sage-100 text-sage-800">
               <Sparkles className="w-3 h-3 text-sage-600" />
               Live Sync
             </span>
           </div>
-          <p className="text-sm text-charcoal-muted mt-1">
+          <p className="text-xs sm:text-sm text-charcoal-muted mt-0.5 sm:mt-1">
             Real-time schedule overview and upcoming mobile detailing appointments.
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2 self-stretch sm:self-auto">
           <button
             onClick={() => loadData()}
-            className="p-2.5 rounded-xl border border-charcoal-border/60 bg-white hover:bg-sage-50 text-charcoal-muted hover:text-charcoal shadow-soft-sm transition-colors"
+            className="p-2.5 rounded-xl border border-charcoal-border/60 bg-white hover:bg-sage-50 text-charcoal-muted hover:text-charcoal shadow-soft-sm transition-colors shrink-0"
             title="Refresh Live Data"
+            aria-label="Refresh Live Data"
           >
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin text-sage-600' : ''}`} />
           </button>
           <Link
             href="/admin"
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-sage-500 hover:bg-sage-600 active:scale-[0.99] text-white text-sm font-medium rounded-xl shadow-soft-sm transition-all"
+            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-sage-500 hover:bg-sage-600 active:scale-[0.99] text-white text-xs sm:text-sm font-semibold rounded-xl shadow-soft-sm transition-all"
           >
             <Plus className="w-4 h-4" />
             <span>New Appointment</span>

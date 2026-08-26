@@ -46,18 +46,18 @@ export default function StatCardsGrid({ stats }: StatCardsGridProps) {
   // If stats is null, render 4 skeleton loader cards
   if (stats === null) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-6">
         {[1, 2, 3, 4].map((index) => (
           <div
             key={index}
-            className="bg-white rounded-xl p-5 border border-charcoal-border/60 shadow-soft-sm animate-pulse"
+            className="bg-white rounded-xl p-3.5 sm:p-5 border border-charcoal-border/60 shadow-soft-sm animate-pulse"
           >
-            <div className="flex items-center justify-between mb-4">
-              <div className="h-4 bg-sage-100/80 rounded w-20"></div>
-              <div className="w-9 h-9 bg-sage-100/60 rounded-lg"></div>
+            <div className="flex items-center justify-between mb-3">
+              <div className="h-3.5 bg-sage-100/80 rounded w-14 sm:w-20"></div>
+              <div className="w-7 h-7 sm:w-9 sm:h-9 bg-sage-100/60 rounded-lg"></div>
             </div>
-            <div className="h-8 bg-sage-100/90 rounded w-16 mb-2"></div>
-            <div className="h-3 bg-sage-50 rounded w-32"></div>
+            <div className="h-6 sm:h-8 bg-sage-100/90 rounded w-12 sm:w-16 mb-1.5"></div>
+            <div className="h-2.5 bg-sage-50 rounded w-20 sm:w-32"></div>
           </div>
         ))}
       </div>
@@ -66,7 +66,7 @@ export default function StatCardsGrid({ stats }: StatCardsGridProps) {
 
   // Populated state
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-6">
       {STAT_CONFIGS.map((config) => {
         const Icon = config.icon;
         const count = stats[config.key] ?? 0;
@@ -74,27 +74,27 @@ export default function StatCardsGrid({ stats }: StatCardsGridProps) {
         return (
           <div
             key={config.key}
-            className="bg-white rounded-xl p-5 border border-charcoal-border/60 shadow-soft-sm hover:shadow-soft-md transition-all duration-200"
+            className="bg-white rounded-xl p-3.5 sm:p-5 border border-charcoal-border/60 shadow-soft-sm hover:shadow-soft-md transition-all duration-200"
           >
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-semibold uppercase tracking-wider text-charcoal-muted">
+            <div className="flex items-center justify-between mb-2 sm:mb-3">
+              <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-charcoal-muted">
                 {config.title}
               </span>
-              <div className="w-9 h-9 rounded-lg bg-sage-50 text-sage-600 flex items-center justify-center border border-sage-100">
-                <Icon className="w-4 h-4" />
+              <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-lg bg-sage-50 text-sage-600 flex items-center justify-center border border-sage-100 shrink-0">
+                <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </div>
             </div>
 
-            <div className="flex items-baseline gap-2 mb-1">
-              <span className="text-3xl font-bold tracking-tight text-charcoal">
+            <div className="flex items-baseline gap-1.5 sm:gap-2 mb-0.5 sm:mb-1">
+              <span className="text-2xl sm:text-3xl font-bold tracking-tight text-charcoal">
                 {count}
               </span>
-              <span className="text-xs text-charcoal-muted">
+              <span className="text-[11px] sm:text-xs text-charcoal-muted">
                 {count === 1 ? 'booking' : 'bookings'}
               </span>
             </div>
 
-            <p className="text-xs text-charcoal-muted/80">
+            <p className="text-[11px] sm:text-xs text-charcoal-muted/80 line-clamp-1 sm:line-clamp-none">
               {config.description}
             </p>
           </div>

@@ -169,25 +169,25 @@ export default function BookingList({
           {sortedBookings.map((booking) => (
             <div
               key={booking.id}
-              className="bg-white rounded-xl p-4 sm:p-5 border border-charcoal-border/60 shadow-soft-sm hover:shadow-soft-md hover:border-sage-300/80 transition-all duration-200"
+              className="bg-white rounded-xl p-3.5 sm:p-5 border border-charcoal-border/60 shadow-soft-sm hover:shadow-soft-md hover:border-sage-300/80 transition-all duration-200"
             >
-              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4">
                 {/* Left & Middle details */}
-                <div className="flex-1 space-y-3">
+                <div className="flex-1 space-y-2.5 sm:space-y-3">
                   {/* Row 1: Customer Name + Phone + Badges */}
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-base font-semibold text-charcoal tracking-tight">
+                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                    <h3 className="text-sm sm:text-base font-bold text-charcoal tracking-tight mr-1">
                       {booking.customer_name}
                     </h3>
 
-                    {/* Client Phone Link */}
+                    {/* Client Phone Link - High-visibility touch target */}
                     {booking.client_no && (
                       <a
                         href={`tel:${booking.client_no.replace(/[^0-9+]/g, '')}`}
-                        className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-sage-50 text-sage-700 hover:text-sage-900 border border-sage-200/80 transition-colors"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-sage-100/90 text-sage-800 hover:bg-sage-200/90 border border-sage-300/80 transition-colors active:scale-95 shadow-soft-xs"
                         title={`Call client: ${booking.client_no}`}
                       >
-                        <Phone className="w-3 h-3 text-sage-600" />
+                        <Phone className="w-3.5 h-3.5 text-sage-700 shrink-0" />
                         <span>{booking.client_no}</span>
                       </a>
                     )}
@@ -198,7 +198,7 @@ export default function BookingList({
 
                     {/* Vehicle Type & Count */}
                     <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-charcoal-surface text-charcoal-muted border border-charcoal-border/50">
-                      <Car className="w-3 h-3 text-charcoal-muted" />
+                      <Car className="w-3 h-3 text-charcoal-muted shrink-0" />
                       <span>
                         {booking.car_count && booking.car_count > 1 ? `${booking.car_count}x ` : ''}
                         {CAR_TYPE_LABELS[booking.car_type] || booking.car_type}
@@ -208,12 +208,12 @@ export default function BookingList({
                     {/* Assigned Detailer */}
                     {booking.assigned_detailer && booking.assigned_detailer !== 'Unassigned' ? (
                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200/60">
-                        <UserCheck className="w-3 h-3 text-purple-600" />
+                        <UserCheck className="w-3 h-3 text-purple-600 shrink-0" />
                         <span>{booking.assigned_detailer}</span>
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200/60">
-                        <UserCheck className="w-3 h-3 text-amber-600" />
+                        <UserCheck className="w-3 h-3 text-amber-600 shrink-0" />
                         <span>Unassigned</span>
                       </span>
                     )}
@@ -222,27 +222,31 @@ export default function BookingList({
                   </div>
 
                   {/* Row 2: Date, Time, Address */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-charcoal-muted">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-3.5 h-3.5 text-sage-600 shrink-0" />
-                      <span className="font-medium text-charcoal">
-                        {formatDisplayDate(booking.booking_date)}
-                      </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2 text-xs text-charcoal-muted">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <div className="flex items-center gap-1.5">
+                        <Calendar className="w-3.5 h-3.5 text-sage-600 shrink-0" />
+                        <span className="font-medium text-charcoal">
+                          {formatDisplayDate(booking.booking_date)}
+                        </span>
+                      </div>
                       <span className="text-charcoal-border">|</span>
-                      <Clock className="w-3.5 h-3.5 text-sage-600 shrink-0" />
-                      <span>{formatDisplayTime(booking.booking_time)}</span>
+                      <div className="flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-sage-600 shrink-0" />
+                        <span>{formatDisplayTime(booking.booking_time)}</span>
+                      </div>
                     </div>
 
-                    <div className="flex items-center gap-1.5 truncate">
+                    <div className="flex items-center gap-1.5 min-w-0">
                       <MapPin className="w-3.5 h-3.5 text-sage-600 shrink-0" />
-                      <span className="truncate" title={booking.address}>
+                      <span className="truncate text-charcoal/90" title={booking.address}>
                         {booking.address}
                       </span>
                     </div>
                   </div>
 
                   {/* Row 3: Utilities on site */}
-                  <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                  <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
                     <span
                       className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium transition-colors ${
                         booking.has_power
@@ -250,7 +254,7 @@ export default function BookingList({
                           : 'bg-charcoal-surface/60 text-charcoal-light border border-charcoal-border/40'
                       }`}
                     >
-                      <Zap className="w-3 h-3 text-amber-600" />
+                      <Zap className="w-3 h-3 text-amber-600 shrink-0" />
                       {booking.has_power ? 'Power On-Site' : 'No Power'}
                     </span>
 
@@ -261,7 +265,7 @@ export default function BookingList({
                           : 'bg-charcoal-surface/60 text-charcoal-light border border-charcoal-border/40'
                       }`}
                     >
-                      <Droplet className="w-3 h-3 text-sky-600" />
+                      <Droplet className="w-3 h-3 text-sky-600 shrink-0" />
                       {booking.has_water ? 'Water On-Site' : 'No Water'}
                     </span>
                   </div>
@@ -269,12 +273,12 @@ export default function BookingList({
 
                 {/* Right side Actions (for Admin view) */}
                 {showActions && (
-                  <div className="flex items-center gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-charcoal-border/40 justify-end shrink-0">
+                  <div className="flex items-center gap-2 pt-2.5 sm:pt-0 border-t sm:border-t-0 border-charcoal-border/40 justify-stretch sm:justify-end shrink-0 w-full sm:w-auto">
                     {onEdit && (
                       <button
                         type="button"
                         onClick={() => onEdit(booking)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-charcoal bg-sage-50 hover:bg-sage-100 rounded-lg border border-sage-200 transition-colors"
+                        className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 text-xs font-medium text-charcoal bg-sage-50 hover:bg-sage-100 active:scale-95 rounded-xl sm:rounded-lg border border-sage-200 transition-all"
                         aria-label={`Edit booking for ${booking.customer_name}`}
                       >
                         <Edit2 className="w-3.5 h-3.5 text-sage-700" />
@@ -286,7 +290,7 @@ export default function BookingList({
                       <button
                         type="button"
                         onClick={() => setDeletingBooking(booking)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg border border-red-200/60 transition-colors"
+                        className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 active:scale-95 rounded-xl sm:rounded-lg border border-red-200/60 transition-all"
                         aria-label={`Delete booking for ${booking.customer_name}`}
                       >
                         <Trash2 className="w-3.5 h-3.5 text-red-600" />

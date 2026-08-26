@@ -47,29 +47,79 @@ function removeLocalMeta(id: string) {
   }
 }
 
-function attachLocalMeta(booking: Booking): Booking {
-  const localMap = getLocalMetaMap();
-  const meta = localMap[booking.id];
+/**
+ * Encodes metadata into address string if native database columns are missing.
+ * This guarantees live sync across different devices via Supabase.
+ */
+function encodeAddressWithMeta(
+  rawAddress: string,
+  meta: { client_no?: string | null; car_count?: number; assigned_detailer?: string | null }
+): string {
+  const clean = (rawAddress || '').replace(/\n?<!--meta:[\s\S]*?-->/, '').trim();
+  const metaObj: Record<string, any> = {};
+  if (meta.client_no) metaObj.client_no = meta.client_no.trim();
+  if (meta.car_count && meta.car_count > 1) metaObj.car_count = meta.car_count;
+  if (meta.assigned_detailer && meta.assigned_detailer !== 'Unassigned') {
+    metaObj.assigned_detailer = meta.assigned_detailer.trim();
+  }
 
-  // If Supabase already returned the field from database, sync it into local cache
-  if (booking.client_no || booking.car_count || booking.assigned_detailer) {
-    saveLocalMeta(booking.id, {
-      client_no: booking.client_no,
-      car_count: booking.car_count,
-      assigned_detailer: booking.assigned_detailer,
+  if (Object.keys(metaObj).length === 0) {
+    return clean;
+  }
+
+  return `${clean}\n<!--meta:${JSON.stringify(metaObj)}-->`;
+}
+
+/**
+ * Decodes a raw booking row from Supabase, extracting any embedded cross-device metadata.
+ */
+function decodeBookingFromDb(row: any): Booking {
+  let address = row.address || '';
+  let meta: LocalBookingMeta = {};
+
+  const match = address.match(/\n?<!--meta:([\s\S]*?)-->/);
+  if (match) {
+    try {
+      meta = JSON.parse(match[1]);
+      address = address.replace(/\n?<!--meta:[\s\S]*?-->/, '').trim();
+    } catch (e) {
+      console.warn('[decodeBookingFromDb metadata parse error]:', e);
+    }
+  }
+
+  const localMap = getLocalMetaMap();
+  const localCache = localMap[row.id] || {};
+
+  const client_no = row.client_no || meta.client_no || localCache.client_no || undefined;
+  const car_count = row.car_count ?? meta.car_count ?? localCache.car_count ?? 1;
+  const assigned_detailer =
+    row.assigned_detailer && row.assigned_detailer !== 'Unassigned'
+      ? row.assigned_detailer
+      : (meta.assigned_detailer || localCache.assigned_detailer || row.assigned_detailer || 'Unassigned');
+
+  // Cache decoded metadata locally
+  if (client_no || car_count > 1 || (assigned_detailer && assigned_detailer !== 'Unassigned')) {
+    saveLocalMeta(row.id, {
+      client_no,
+      car_count,
+      assigned_detailer,
     });
   }
 
-  if (!meta) return booking;
-
   return {
-    ...booking,
-    client_no: booking.client_no || meta.client_no || undefined,
-    car_count: booking.car_count ?? meta.car_count ?? 1,
-    assigned_detailer:
-      booking.assigned_detailer && booking.assigned_detailer !== 'Unassigned'
-        ? booking.assigned_detailer
-        : (meta.assigned_detailer || booking.assigned_detailer || 'Unassigned'),
+    id: row.id,
+    customer_name: row.customer_name,
+    client_no,
+    car_count,
+    assigned_detailer,
+    service: row.service,
+    address,
+    booking_date: row.booking_date,
+    booking_time: row.booking_time,
+    car_type: row.car_type,
+    has_power: Boolean(row.has_power),
+    has_water: Boolean(row.has_water),
+    status: row.status,
   };
 }
 
@@ -93,8 +143,8 @@ export async function getBookings(): Promise<Booking[]> {
     throw new Error(error.message);
   }
 
-  const rows = (data as Booking[]) || [];
-  return rows.map(attachLocalMeta);
+  const rows = data || [];
+  return rows.map(decodeBookingFromDb);
 }
 
 /**
@@ -118,8 +168,8 @@ export async function getUpcomingBookings(): Promise<Booking[]> {
     throw new Error(error.message);
   }
 
-  const rows = (data as Booking[]) || [];
-  return rows.map(attachLocalMeta);
+  const rows = data || [];
+  return rows.map(decodeBookingFromDb);
 }
 
 /**
@@ -142,7 +192,6 @@ export async function getStats(): Promise<BookingStats> {
 
   if (error) {
     console.error('[Supabase getStats error]:', error.message);
-    // Return zeros if view query fails (e.g. empty or initializing)
     return {
       today_count: 0,
       week_count: 0,
@@ -179,6 +228,7 @@ function isSchemaMismatchError(error: any): boolean {
 
 /**
  * Add a new booking row to the bookings table.
+ * Encodes cross-device metadata automatically if native columns are missing.
  */
 export async function addBooking(
   data: Omit<Booking, 'id' | 'status'>
@@ -200,56 +250,50 @@ export async function addBooking(
     status: 'scheduled',
   };
 
-  let createdRecord: Booking | null = null;
+  let createdRecord: any = null;
 
+  // First try inserting with native columns
   let { data: created, error } = await supabase
     .from('bookings')
     .insert([payload])
     .select()
     .single();
 
-  // If columns are missing in Supabase schema cache yet, retry with base columns
+  // If columns are missing in Supabase schema, embed cross-device metadata in address
   if (error && isSchemaMismatchError(error)) {
     console.warn(
-      '[Supabase schema warning]: Extra columns missing from Supabase table. Inserting base fields and persisting metadata locally. Please run the ALTER TABLE script in Supabase SQL editor.'
+      '[Supabase sync]: Native columns missing in table. Embedding cross-device metadata in row for live sync.'
     );
-    const { client_no: _c, car_count: _cc, assigned_detailer: _ad, ...basePayload } = payload;
+    const { client_no: _c, car_count: _cc, assigned_detailer: _ad, address: rawAddr, ...basePayload } = payload;
+    const addressWithMeta = encodeAddressWithMeta(rawAddr, {
+      client_no: clientNo,
+      car_count: carCount,
+      assigned_detailer: assignedDetailer,
+    });
+
     const retry = await supabase
       .from('bookings')
-      .insert([basePayload])
+      .insert([{ ...basePayload, address: addressWithMeta }])
       .select()
       .single();
 
     if (retry.error) {
       throw new Error(retry.error.message);
     }
-    createdRecord = {
-      ...retry.data,
-      client_no: clientNo || undefined,
-      car_count: carCount,
-      assigned_detailer: assignedDetailer,
-    } as Booking;
+    createdRecord = retry.data;
   } else if (error) {
     console.error('[Supabase addBooking error]:', error.message);
     throw new Error(error.message);
   } else {
-    createdRecord = created as Booking;
+    createdRecord = created;
   }
 
-  // Persist metadata locally so it survives any refresh even without DB columns
-  if (createdRecord?.id) {
-    saveLocalMeta(createdRecord.id, {
-      client_no: clientNo || undefined,
-      car_count: carCount,
-      assigned_detailer: assignedDetailer,
-    });
-  }
-
-  return attachLocalMeta(createdRecord as Booking);
+  return decodeBookingFromDb(createdRecord);
 }
 
 /**
  * Update an existing booking row.
+ * Encodes cross-device metadata automatically if native columns are missing.
  */
 export async function updateBooking(
   id: string,
@@ -263,13 +307,6 @@ export async function updateBooking(
   const carCount = data.car_count !== undefined ? (Number(data.car_count) || 1) : undefined;
   const assignedDetailer = data.assigned_detailer !== undefined ? (data.assigned_detailer?.trim() || 'Unassigned') : undefined;
 
-  // Persist metadata locally
-  saveLocalMeta(id, {
-    ...(clientNo !== undefined ? { client_no: clientNo || undefined } : {}),
-    ...(carCount !== undefined ? { car_count: carCount } : {}),
-    ...(assignedDetailer !== undefined ? { assigned_detailer: assignedDetailer } : {}),
-  });
-
   const updatePayload: any = {
     ...data,
     ...(data.service ? { service: normalizeService(data.service) } : {}),
@@ -278,8 +315,9 @@ export async function updateBooking(
     ...(assignedDetailer !== undefined ? { assigned_detailer: assignedDetailer } : {}),
   };
 
-  let updatedRecord: Booking | null = null;
+  let updatedRecord: any = null;
 
+  // First try updating with native columns
   let { data: updated, error } = await supabase
     .from('bookings')
     .update(updatePayload)
@@ -287,15 +325,29 @@ export async function updateBooking(
     .select()
     .single();
 
-  // If column doesn't exist in Supabase table schema cache yet, retry with base columns
+  // If column doesn't exist in Supabase table schema, embed metadata in address
   if (error && isSchemaMismatchError(error)) {
     console.warn(
-      '[Supabase schema warning]: Extra columns missing from Supabase table. Updating basic fields and persisting metadata locally.'
+      '[Supabase sync]: Native columns missing in table. Embedding cross-device metadata in update for live sync.'
     );
-    const { client_no: _c, car_count: _cc, assigned_detailer: _ad, ...basePayload } = updatePayload;
+    const { client_no: _c, car_count: _cc, assigned_detailer: _ad, address: rawAddr, ...basePayload } = updatePayload;
+    
+    // If address was not provided in this update, fetch current address first
+    let currentAddress = rawAddr;
+    if (!currentAddress) {
+      const { data: currentDoc } = await supabase.from('bookings').select('address').eq('id', id).single();
+      currentAddress = currentDoc?.address || '';
+    }
+
+    const addressWithMeta = encodeAddressWithMeta(currentAddress, {
+      client_no: clientNo,
+      car_count: carCount,
+      assigned_detailer: assignedDetailer,
+    });
+
     const retry = await supabase
       .from('bookings')
-      .update(basePayload)
+      .update({ ...basePayload, address: addressWithMeta })
       .eq('id', id)
       .select()
       .single();
@@ -303,20 +355,15 @@ export async function updateBooking(
     if (retry.error) {
       throw new Error(retry.error.message);
     }
-    updatedRecord = {
-      ...retry.data,
-      ...(clientNo !== undefined ? { client_no: clientNo || undefined } : {}),
-      ...(carCount !== undefined ? { car_count: carCount } : {}),
-      ...(assignedDetailer !== undefined ? { assigned_detailer: assignedDetailer } : {}),
-    } as Booking;
+    updatedRecord = retry.data;
   } else if (error) {
     console.error('[Supabase updateBooking error]:', error.message);
     throw new Error(error.message);
   } else {
-    updatedRecord = updated as Booking;
+    updatedRecord = updated;
   }
 
-  return attachLocalMeta(updatedRecord as Booking);
+  return decodeBookingFromDb(updatedRecord);
 }
 
 /**
@@ -341,7 +388,8 @@ export async function deleteBooking(id: string): Promise<void> {
 }
 
 /**
- * Subscribe to realtime changes on the bookings table.
+ * Subscribe to realtime changes on the bookings table across all devices.
+ * Uses a unique channel name to prevent multi-tab/multi-device collision.
  * Returns an unsubscribe callback for cleanup.
  */
 export function subscribeToBookings(callback: () => void): () => void {
@@ -349,8 +397,9 @@ export function subscribeToBookings(callback: () => void): () => void {
     return () => {};
   }
 
+  const channelId = `realtime_bookings_${Math.random().toString(36).substring(2, 9)}`;
   const channel = supabase
-    .channel('bookings_realtime_changes')
+    .channel(channelId)
     .on(
       'postgres_changes',
       {
@@ -359,11 +408,15 @@ export function subscribeToBookings(callback: () => void): () => void {
         table: 'bookings',
       },
       (payload) => {
-        console.log('[Supabase Realtime event received]:', payload.eventType);
+        console.log('[Supabase Realtime event across devices]:', payload.eventType);
         callback();
       }
     )
-    .subscribe();
+    .subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        console.log('[Supabase Realtime] Connected and listening for cross-device live sync.');
+      }
+    });
 
   return () => {
     supabase.removeChannel(channel);

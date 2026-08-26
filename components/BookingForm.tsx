@@ -85,6 +85,24 @@ export default function BookingForm({
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  React.useEffect(() => {
+    if (initialData) {
+      setCustomerName(initialData.customer_name || '');
+      setClientNo(initialData.client_no || '');
+      setCarCount(initialData.car_count || 1);
+      setAssignedDetailer(
+        initialData.assigned_detailer === 'Unassigned' ? '' : (initialData.assigned_detailer || '')
+      );
+      setService(initialData.service || 'interior_silver');
+      setAddress(initialData.address || '');
+      setBookingDate(initialData.booking_date || todayDateString);
+      setBookingTime(initialData.booking_time || '09:00:00');
+      setCarType(initialData.car_type || 'sedan');
+      setHasPower(initialData.has_power ?? false);
+      setHasWater(initialData.has_water ?? false);
+    }
+  }, [initialData, todayDateString]);
+
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 

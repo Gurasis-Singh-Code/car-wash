@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Booking } from '@/types/booking';
+import { Booking, BookingStatus } from '@/types/booking';
 import {
   getBookings,
   addBooking,
@@ -61,6 +61,25 @@ export default function AdminPage() {
       const msg = err?.message || 'Failed to create booking on Supabase.';
       setError(msg);
       throw new Error(msg); // re-throw so BookingForm displays inline error
+    }
+  };
+
+  // Status toggle handler wired to Supabase updateBooking with optimistic updates
+  const handleStatusChange = async (id: string, newStatus: BookingStatus) => {
+    const previousBookings = [...bookings];
+    // Optimistic update
+    setBookings((prev) =>
+      prev.map((b) => (b.id === id ? { ...b, status: newStatus } : b))
+    );
+
+    try {
+      setError(null);
+      await updateBooking(id, { status: newStatus });
+    } catch (err: any) {
+      console.error('[handleStatusChange error]:', err);
+      // Rollback on error
+      setBookings(previousBookings);
+      setError(err?.message || 'Failed to update booking status on Supabase.');
     }
   };
 
@@ -176,9 +195,11 @@ export default function AdminPage() {
           <BookingList
             bookings={bookings}
             title="All Bookings"
-            subtitle="Full appointment directory with edit and cancellation controls"
+            subtitle="Full appointment directory with quick status toggles and controls"
             emptyMessage="No bookings scheduled yet"
             showActions={true}
+            showStatusFilter={true}
+            onStatusChange={handleStatusChange}
             onEdit={handleEditClick}
             onDelete={handleDeleteBooking}
           />

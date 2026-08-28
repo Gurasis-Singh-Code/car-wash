@@ -5,8 +5,10 @@ import {
   Booking,
   CarType,
   ServiceType,
+  BookingStatus,
   SERVICE_LABELS,
   CAR_TYPE_LABELS,
+  STATUS_LABELS,
 } from '@/types/booking';
 import {
   Calendar,
@@ -24,11 +26,11 @@ import {
   Hash,
 } from 'lucide-react';
 
-export type BookingFormData = Omit<Booking, 'id' | 'status'>;
+export type BookingFormData = Omit<Booking, 'id' | 'status'> & { status?: BookingStatus };
 
 interface BookingFormProps {
   onSubmit?: (data: BookingFormData) => void | Promise<void>;
-  initialData?: Partial<BookingFormData>;
+  initialData?: Partial<Booking>;
   submitButtonLabel?: string;
   isEditing?: boolean;
 }
@@ -74,6 +76,7 @@ export default function BookingForm({
     initialData?.assigned_detailer === 'Unassigned' ? '' : (initialData?.assigned_detailer || '')
   );
   const [service, setService] = useState<ServiceType>(initialData?.service || 'interior_silver');
+  const [status, setStatus] = useState<BookingStatus>(initialData?.status || 'scheduled');
   const [address, setAddress] = useState(initialData?.address || '');
   const [bookingDate, setBookingDate] = useState(initialData?.booking_date || todayDateString);
   const [bookingTime, setBookingTime] = useState(initialData?.booking_time || '09:00:00');
@@ -94,6 +97,7 @@ export default function BookingForm({
         initialData.assigned_detailer === 'Unassigned' ? '' : (initialData.assigned_detailer || '')
       );
       setService(initialData.service || 'interior_silver');
+      setStatus(initialData.status || 'scheduled');
       setAddress(initialData.address || '');
       setBookingDate(initialData.booking_date || todayDateString);
       setBookingTime(initialData.booking_time || '09:00:00');
@@ -146,6 +150,7 @@ export default function BookingForm({
       car_count: Number(carCount) || 1,
       assigned_detailer: assignedDetailer.trim() || 'Unassigned',
       service,
+      status: isEditing ? status : undefined,
       address: address.trim(),
       booking_date: bookingDate,
       booking_time: bookingTime,
@@ -571,6 +576,55 @@ export default function BookingForm({
             <div className="w-10 h-6 bg-charcoal-border peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-charcoal-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sage-500 relative"></div>
           </label>
         </div>
+
+        {/* Booking Status selector when in Edit Mode */}
+        {isEditing && (
+          <div className="pt-1.5 space-y-2">
+            <span className="block text-xs font-semibold uppercase tracking-wider text-charcoal">
+              Booking Status
+            </span>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => setStatus('scheduled')}
+                className={`py-2 px-3 rounded-xl text-xs font-semibold border flex items-center justify-center gap-1.5 transition-all ${
+                  status === 'scheduled'
+                    ? 'bg-sage-100 text-sage-900 border-sage-400 ring-2 ring-sage-400/30 font-bold shadow-soft-xs'
+                    : 'bg-[#FAF9F6] text-charcoal-muted border-charcoal-border hover:bg-white hover:text-charcoal'
+                }`}
+              >
+                <Clock className="w-3.5 h-3.5 text-sage-700" />
+                <span>Scheduled</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setStatus('completed')}
+                className={`py-2 px-3 rounded-xl text-xs font-semibold border flex items-center justify-center gap-1.5 transition-all ${
+                  status === 'completed'
+                    ? 'bg-emerald-100 text-emerald-900 border-emerald-400 ring-2 ring-emerald-400/30 font-bold shadow-soft-xs'
+                    : 'bg-[#FAF9F6] text-charcoal-muted border-charcoal-border hover:bg-white hover:text-charcoal'
+                }`}
+              >
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
+                <span>Completed</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setStatus('cancelled')}
+                className={`py-2 px-3 rounded-xl text-xs font-semibold border flex items-center justify-center gap-1.5 transition-all ${
+                  status === 'cancelled'
+                    ? 'bg-red-100 text-red-900 border-red-400 ring-2 ring-red-400/30 font-bold shadow-soft-xs'
+                    : 'bg-[#FAF9F6] text-charcoal-muted border-charcoal-border hover:bg-white hover:text-charcoal'
+                }`}
+              >
+                <AlertCircle className="w-3.5 h-3.5 text-red-700" />
+                <span>Cancelled</span>
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Submit button */}
         <div className="pt-2">

@@ -28,6 +28,7 @@ import {
   Check,
   X,
   Loader2,
+  Instagram,
 } from 'lucide-react';
 
 interface BookingListProps {
@@ -325,6 +326,28 @@ export default function BookingList({
                         >
                           <Phone className="w-3.5 h-3.5 text-sage-700 shrink-0" />
                           <span>{booking.client_no}</span>
+                        </a>
+                      )}
+
+                      {/* Instagram User ID / Profile Link */}
+                      {booking.instagram_user_id && (
+                        <a
+                          href={
+                            booking.instagram_user_id.startsWith('http')
+                              ? booking.instagram_user_id
+                              : `https://instagram.com/${booking.instagram_user_id.replace(/^@/, '')}`
+                          }
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-pink-50 text-pink-700 hover:bg-pink-100 border border-pink-200/80 transition-colors active:scale-95 shadow-soft-xs"
+                          title={`Instagram profile: ${booking.instagram_user_id}`}
+                        >
+                          <Instagram className="w-3.5 h-3.5 text-pink-600 shrink-0" />
+                          <span>
+                            {booking.instagram_user_id.startsWith('@')
+                              ? booking.instagram_user_id
+                              : `@${booking.instagram_user_id}`}
+                          </span>
                         </a>
                       )}
 

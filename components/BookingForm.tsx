@@ -24,6 +24,7 @@ import {
   Phone,
   UserCheck,
   Hash,
+  Instagram,
 } from 'lucide-react';
 
 export type BookingFormData = Omit<Booking, 'id' | 'status'> & { status?: BookingStatus };
@@ -71,6 +72,7 @@ export default function BookingForm({
 
   const [customerName, setCustomerName] = useState(initialData?.customer_name || '');
   const [clientNo, setClientNo] = useState(initialData?.client_no || '');
+  const [instagramUserId, setInstagramUserId] = useState(initialData?.instagram_user_id || '');
   const [carCount, setCarCount] = useState<number>(initialData?.car_count || 1);
   const [assignedDetailer, setAssignedDetailer] = useState(
     initialData?.assigned_detailer === 'Unassigned' ? '' : (initialData?.assigned_detailer || '')
@@ -92,6 +94,7 @@ export default function BookingForm({
     if (initialData) {
       setCustomerName(initialData.customer_name || '');
       setClientNo(initialData.client_no || '');
+      setInstagramUserId(initialData.instagram_user_id || '');
       setCarCount(initialData.car_count || 1);
       setAssignedDetailer(
         initialData.assigned_detailer === 'Unassigned' ? '' : (initialData.assigned_detailer || '')
@@ -147,6 +150,7 @@ export default function BookingForm({
     const payload: BookingFormData = {
       customer_name: customerName.trim(),
       client_no: clientNo.trim() || undefined,
+      instagram_user_id: instagramUserId.trim() || undefined,
       car_count: Number(carCount) || 1,
       assigned_detailer: assignedDetailer.trim() || 'Unassigned',
       service,
@@ -178,6 +182,7 @@ export default function BookingForm({
       if (!isEditing) {
         setCustomerName('');
         setClientNo('');
+        setInstagramUserId('');
         setCarCount(1);
         setAssignedDetailer('');
         setAddress('');
@@ -295,27 +300,29 @@ export default function BookingForm({
           </div>
         </div>
 
-        {/* Row 2: Service Package & Assigned Detailer */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-          {/* Service Type */}
+        {/* Row 2: Instagram User ID & Assigned Detailer */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5">
+          {/* Instagram User ID */}
           <div>
             <label
-              htmlFor="service"
+              htmlFor="instagram_user_id"
               className="block text-xs font-semibold uppercase tracking-wider text-charcoal mb-1.5"
             >
-              Service Package <span className="text-red-500">*</span>
+              Instagram User ID
             </label>
-            <select
-              id="service"
-              value={service}
-              onChange={(e) => setService(e.target.value as ServiceType)}
-              className="w-full px-3.5 py-2.5 rounded-xl text-base sm:text-sm bg-[#FAF9F6] border border-charcoal-border text-charcoal focus:border-sage-500 focus:bg-white transition-colors cursor-pointer"
-            >
-              <option value="interior_silver">{SERVICE_LABELS.interior_silver}</option>
-              <option value="interior_gold">{SERVICE_LABELS.interior_gold}</option>
-              <option value="full_silver">{SERVICE_LABELS.full_silver}</option>
-              <option value="full_gold">{SERVICE_LABELS.full_gold}</option>
-            </select>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-charcoal-muted">
+                <Instagram className="w-4 h-4 text-pink-600" />
+              </div>
+              <input
+                id="instagram_user_id"
+                type="text"
+                value={instagramUserId}
+                onChange={(e) => setInstagramUserId(e.target.value)}
+                placeholder="e.g. @sarah_detailing"
+                className="w-full pl-10 pr-3.5 py-2.5 rounded-xl text-base sm:text-sm bg-[#FAF9F6] border border-charcoal-border text-charcoal placeholder:text-charcoal-light/70 focus:border-sage-500 focus:bg-white transition-colors"
+              />
+            </div>
           </div>
 
           {/* Assigned Detailer */}
@@ -342,8 +349,29 @@ export default function BookingForm({
           </div>
         </div>
 
-        {/* Row 3: Vehicle Type & Number of Cars */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5">
+        {/* Row 3: Service Package & Vehicle Type */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          {/* Service Type */}
+          <div>
+            <label
+              htmlFor="service"
+              className="block text-xs font-semibold uppercase tracking-wider text-charcoal mb-1.5"
+            >
+              Service Package <span className="text-red-500">*</span>
+            </label>
+            <select
+              id="service"
+              value={service}
+              onChange={(e) => setService(e.target.value as ServiceType)}
+              className="w-full px-3.5 py-2.5 rounded-xl text-base sm:text-sm bg-[#FAF9F6] border border-charcoal-border text-charcoal focus:border-sage-500 focus:bg-white transition-colors cursor-pointer"
+            >
+              <option value="interior_silver">{SERVICE_LABELS.interior_silver}</option>
+              <option value="interior_gold">{SERVICE_LABELS.interior_gold}</option>
+              <option value="full_silver">{SERVICE_LABELS.full_silver}</option>
+              <option value="full_gold">{SERVICE_LABELS.full_gold}</option>
+            </select>
+          </div>
+
           {/* Car Type */}
           <div>
             <label
@@ -371,8 +399,10 @@ export default function BookingForm({
               </select>
             </div>
           </div>
+        </div>
 
-          {/* Number of Cars */}
+        {/* Row 4: Number of Cars */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5">
           <div>
             <label
               htmlFor="car_count"

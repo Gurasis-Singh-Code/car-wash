@@ -3,6 +3,7 @@
 -- 🚀 MIGRATION: RUN THIS BLOCK IF YOU ALREADY CREATED THE BOOKINGS TABLE:
 -- ==============================================================================
 alter table bookings add column if not exists client_no text;
+alter table bookings add column if not exists instagram_user_id text;
 alter table bookings add column if not exists car_count integer not null default 1;
 alter table bookings add column if not exists assigned_detailer text default 'Unassigned';
 -- ==============================================================================
@@ -19,6 +20,7 @@ create table if not exists bookings (
   id uuid primary key default gen_random_uuid(),
   customer_name text not null,
   client_no text,
+  instagram_user_id text,
   car_count integer not null default 1,
   assigned_detailer text default 'Unassigned',
   service service_type not null,

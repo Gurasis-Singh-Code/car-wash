@@ -12,6 +12,7 @@ export interface Booking {
   id: string;
   customer_name: string;
   client_no?: string;
+  instagram_user_id?: string;
   car_count?: number;
   assigned_detailer?: string;
   service: ServiceType;

@@ -30,6 +30,7 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   X,
+  Instagram,
 } from 'lucide-react';
 
 type TimeframePreset =
@@ -537,9 +538,10 @@ export default function OverviewPage() {
           const matchName = b.customer_name?.toLowerCase().includes(q);
           const matchAddress = b.address?.toLowerCase().includes(q);
           const matchPhone = b.client_no?.toLowerCase().includes(q);
+          const matchInstagram = b.instagram_user_id?.toLowerCase().includes(q);
           const matchDetailer = b.assigned_detailer?.toLowerCase().includes(q);
           const matchService = (SERVICE_LABELS[b.service] || b.service)?.toLowerCase().includes(q);
-          return matchName || matchAddress || matchPhone || matchDetailer || matchService;
+          return matchName || matchAddress || matchPhone || matchInstagram || matchDetailer || matchService;
         }
         return true;
       })
@@ -1436,21 +1438,43 @@ export default function OverviewPage() {
                       </div>
                     </td>
 
-                    {/* Customer & Phone */}
+                    {/* Customer & Phone & Instagram */}
                     <td className="py-3 px-3">
                       <div className="font-bold text-charcoal truncate max-w-[140px]" title={booking.customer_name}>
                         {booking.customer_name}
                       </div>
-                      {booking.client_no && (
-                        <a
-                          href={`tel:${booking.client_no.replace(/[^0-9+]/g, '')}`}
-                          className="inline-flex items-center gap-1 text-[11px] text-sage-700 hover:text-sage-900 font-medium"
-                        >
-                          <Phone className="w-2.5 h-2.5" />
-                          <span>{booking.client_no}</span>
-                        </a>
-                      )}
-                      <div className="text-[10px] text-charcoal-muted truncate max-w-[160px]" title={booking.address}>
+                      <div className="flex flex-col gap-0.5 mt-0.5">
+                        {booking.client_no && (
+                          <a
+                            href={`tel:${booking.client_no.replace(/[^0-9+]/g, '')}`}
+                            className="inline-flex items-center gap-1 text-[11px] text-sage-700 hover:text-sage-900 font-medium"
+                          >
+                            <Phone className="w-2.5 h-2.5 shrink-0" />
+                            <span>{booking.client_no}</span>
+                          </a>
+                        )}
+                        {booking.instagram_user_id && (
+                          <a
+                            href={
+                              booking.instagram_user_id.startsWith('http')
+                                ? booking.instagram_user_id
+                                : `https://instagram.com/${booking.instagram_user_id.replace(/^@/, '')}`
+                            }
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[11px] text-pink-700 hover:text-pink-900 font-medium truncate max-w-[150px]"
+                            title={`Instagram: ${booking.instagram_user_id}`}
+                          >
+                            <Instagram className="w-2.5 h-2.5 shrink-0 text-pink-600" />
+                            <span>
+                              {booking.instagram_user_id.startsWith('@')
+                                ? booking.instagram_user_id
+                                : `@${booking.instagram_user_id}`}
+                            </span>
+                          </a>
+                        )}
+                      </div>
+                      <div className="text-[10px] text-charcoal-muted truncate max-w-[160px] mt-0.5" title={booking.address}>
                         {booking.address}
                       </div>
                     </td>

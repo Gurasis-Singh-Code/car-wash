@@ -3,6 +3,7 @@ import { Booking, BookingStats, ServiceType } from '@/types/booking';
 
 interface LocalBookingMeta {
   client_no?: string;
+  instagram_user_id?: string;
   car_count?: number;
   assigned_detailer?: string;
 }
@@ -27,6 +28,7 @@ function saveLocalMeta(id: string, meta: LocalBookingMeta) {
     all[id] = {
       ...(all[id] || {}),
       ...(meta.client_no !== undefined ? { client_no: meta.client_no } : {}),
+      ...(meta.instagram_user_id !== undefined ? { instagram_user_id: meta.instagram_user_id } : {}),
       ...(meta.car_count !== undefined ? { car_count: meta.car_count } : {}),
       ...(meta.assigned_detailer !== undefined ? { assigned_detailer: meta.assigned_detailer } : {}),
     };
@@ -53,11 +55,17 @@ function removeLocalMeta(id: string) {
  */
 function encodeAddressWithMeta(
   rawAddress: string,
-  meta: { client_no?: string | null; car_count?: number; assigned_detailer?: string | null }
+  meta: {
+    client_no?: string | null;
+    instagram_user_id?: string | null;
+    car_count?: number;
+    assigned_detailer?: string | null;
+  }
 ): string {
   const clean = (rawAddress || '').replace(/\n?<!--meta:[\s\S]*?-->/, '').trim();
   const metaObj: Record<string, any> = {};
   if (meta.client_no) metaObj.client_no = meta.client_no.trim();
+  if (meta.instagram_user_id) metaObj.instagram_user_id = meta.instagram_user_id.trim();
   if (meta.car_count && meta.car_count > 1) metaObj.car_count = meta.car_count;
   if (meta.assigned_detailer && meta.assigned_detailer !== 'Unassigned') {
     metaObj.assigned_detailer = meta.assigned_detailer.trim();
@@ -91,6 +99,8 @@ function decodeBookingFromDb(row: any): Booking {
   const localCache = localMap[row.id] || {};
 
   const client_no = row.client_no || meta.client_no || localCache.client_no || undefined;
+  const instagram_user_id =
+    row.instagram_user_id || meta.instagram_user_id || localCache.instagram_user_id || undefined;
   const car_count = row.car_count ?? meta.car_count ?? localCache.car_count ?? 1;
   const assigned_detailer =
     row.assigned_detailer && row.assigned_detailer !== 'Unassigned'
@@ -98,9 +108,15 @@ function decodeBookingFromDb(row: any): Booking {
       : (meta.assigned_detailer || localCache.assigned_detailer || row.assigned_detailer || 'Unassigned');
 
   // Cache decoded metadata locally
-  if (client_no || car_count > 1 || (assigned_detailer && assigned_detailer !== 'Unassigned')) {
+  if (
+    client_no ||
+    instagram_user_id ||
+    car_count > 1 ||
+    (assigned_detailer && assigned_detailer !== 'Unassigned')
+  ) {
     saveLocalMeta(row.id, {
       client_no,
+      instagram_user_id,
       car_count,
       assigned_detailer,
     });
@@ -110,6 +126,7 @@ function decodeBookingFromDb(row: any): Booking {
     id: row.id,
     customer_name: row.customer_name,
     client_no,
+    instagram_user_id,
     car_count,
     assigned_detailer,
     service: row.service,
@@ -238,12 +255,14 @@ export async function addBooking(
   }
 
   const clientNo = data.client_no?.trim() || null;
+  const instagramUserId = data.instagram_user_id?.trim() || null;
   const carCount = Number(data.car_count) || 1;
   const assignedDetailer = data.assigned_detailer?.trim() || 'Unassigned';
 
   const payload: any = {
     ...data,
     client_no: clientNo,
+    instagram_user_id: instagramUserId,
     car_count: carCount,
     assigned_detailer: assignedDetailer,
     service: normalizeService(data.service) || 'interior_silver',
@@ -264,9 +283,17 @@ export async function addBooking(
     console.warn(
       '[Supabase sync]: Native columns missing in table. Embedding cross-device metadata in row for live sync.'
     );
-    const { client_no: _c, car_count: _cc, assigned_detailer: _ad, address: rawAddr, ...basePayload } = payload;
+    const {
+      client_no: _c,
+      instagram_user_id: _ig,
+      car_count: _cc,
+      assigned_detailer: _ad,
+      address: rawAddr,
+      ...basePayload
+    } = payload;
     const addressWithMeta = encodeAddressWithMeta(rawAddr, {
       client_no: clientNo,
+      instagram_user_id: instagramUserId,
       car_count: carCount,
       assigned_detailer: assignedDetailer,
     });
@@ -304,6 +331,8 @@ export async function updateBooking(
   }
 
   const clientNo = data.client_no !== undefined ? (data.client_no?.trim() || null) : undefined;
+  const instagramUserId =
+    data.instagram_user_id !== undefined ? (data.instagram_user_id?.trim() || null) : undefined;
   const carCount = data.car_count !== undefined ? (Number(data.car_count) || 1) : undefined;
   const assignedDetailer = data.assigned_detailer !== undefined ? (data.assigned_detailer?.trim() || 'Unassigned') : undefined;
 
@@ -311,6 +340,7 @@ export async function updateBooking(
     ...data,
     ...(data.service ? { service: normalizeService(data.service) } : {}),
     ...(clientNo !== undefined ? { client_no: clientNo } : {}),
+    ...(instagramUserId !== undefined ? { instagram_user_id: instagramUserId } : {}),
     ...(carCount !== undefined ? { car_count: carCount } : {}),
     ...(assignedDetailer !== undefined ? { assigned_detailer: assignedDetailer } : {}),
   };
@@ -330,7 +360,14 @@ export async function updateBooking(
     console.warn(
       '[Supabase sync]: Native columns missing in table. Embedding cross-device metadata in update for live sync.'
     );
-    const { client_no: _c, car_count: _cc, assigned_detailer: _ad, address: rawAddr, ...basePayload } = updatePayload;
+    const {
+      client_no: _c,
+      instagram_user_id: _ig,
+      car_count: _cc,
+      assigned_detailer: _ad,
+      address: rawAddr,
+      ...basePayload
+    } = updatePayload;
     
     // If address was not provided in this update, fetch current address first
     let currentAddress = rawAddr;
@@ -341,6 +378,7 @@ export async function updateBooking(
 
     const addressWithMeta = encodeAddressWithMeta(currentAddress, {
       client_no: clientNo,
+      instagram_user_id: instagramUserId,
       car_count: carCount,
       assigned_detailer: assignedDetailer,
     });

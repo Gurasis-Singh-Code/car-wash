@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
-import { Sparkles, Calendar, Settings, LogOut, LogIn } from 'lucide-react';
+import { Sparkles, Calendar, BarChart3, Settings, LogOut, LogIn } from 'lucide-react';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -48,6 +48,19 @@ export default function Navbar() {
               >
                 <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
                 <span>Dashboard</span>
+              </Link>
+
+              <Link
+                href="/overview"
+                className={`flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-medium transition-all ${
+                  pathname === '/overview'
+                    ? 'bg-sage-500 text-white shadow-soft-sm'
+                    : 'text-charcoal-muted hover:text-charcoal hover:bg-sage-100/70'
+                }`}
+                title="Performance Overview"
+              >
+                <BarChart3 className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                <span>Overview</span>
               </Link>
 
               <Link

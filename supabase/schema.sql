@@ -15,9 +15,36 @@ create index if not exists idx_bookings_number on bookings (number);
 create index if not exists idx_bookings_instagram on bookings (instagram_user_id);
 create index if not exists idx_bookings_assigned_detailer on bookings (assigned_detailer);
 
--- Clean up any legacy metadata embedded in the address column if present
+-- Backfill dedicated columns from legacy metadata embedded in the address column
+-- (must run BEFORE the cleanup step below, or this data is lost permanently)
+with extracted as (
+  select
+    id,
+    (regexp_match(address, '<!--meta:([\s\S]*?)-->'))[1]::jsonb as meta
+  from bookings
+  where address like '%<!--meta:%'
+)
+update bookings b
+set
+  client_no = coalesce(b.client_no, e.meta->>'client_no', e.meta->>'number'),
+  number = coalesce(b.number, e.meta->>'number', e.meta->>'client_no'),
+  instagram_user_id = coalesce(b.instagram_user_id, e.meta->>'instagram_user_id'),
+  assigned_detailer = case
+    when b.assigned_detailer is null or b.assigned_detailer = 'Unassigned'
+      then coalesce(e.meta->>'assigned_detailer', b.assigned_detailer, 'Unassigned')
+    else b.assigned_detailer
+  end,
+  car_count = case
+    when b.car_count is null or b.car_count = 1
+      then coalesce((e.meta->>'car_count')::int, b.car_count, 1)
+    else b.car_count
+  end
+from extracted e
+where b.id = e.id;
+
+-- Clean up the legacy metadata comment now that its data lives in dedicated columns
 update bookings
-set address = regexp_replace(address, '\n?<!--meta:[\s\S]*?-->', '', 'g')
+set address = trim(regexp_replace(address, '\n?<!--meta:[\s\S]*?-->', '', 'g'))
 where address like '%<!--meta:%';
 -- ==============================================================================
 

@@ -11,6 +11,7 @@ export type BookingStatus = 'scheduled' | 'completed' | 'cancelled';
 export interface Booking {
   id: string;
   customer_name: string;
+  number?: string;
   client_no?: string;
   instagram_user_id?: string;
   car_count?: number;

@@ -318,14 +318,14 @@ export default function BookingList({
                       </h3>
 
                       {/* Client Phone Link - High-visibility touch target */}
-                      {booking.client_no && (
+                      {(booking.number || booking.client_no) && (
                         <a
-                          href={`tel:${booking.client_no.replace(/[^0-9+]/g, '')}`}
+                          href={`tel:${(booking.number || booking.client_no || '').replace(/[^0-9+]/g, '')}`}
                           className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-sage-100/90 text-sage-800 hover:bg-sage-200/90 border border-sage-300/80 transition-colors active:scale-95 shadow-soft-xs"
-                          title={`Call client: ${booking.client_no}`}
+                          title={`Call client: ${booking.number || booking.client_no}`}
                         >
                           <Phone className="w-3.5 h-3.5 text-sage-700 shrink-0" />
-                          <span>{booking.client_no}</span>
+                          <span>{booking.number || booking.client_no}</span>
                         </a>
                       )}
 

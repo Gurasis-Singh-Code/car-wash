@@ -537,7 +537,7 @@ export default function OverviewPage() {
           const q = searchQuery.toLowerCase();
           const matchName = b.customer_name?.toLowerCase().includes(q);
           const matchAddress = b.address?.toLowerCase().includes(q);
-          const matchPhone = b.client_no?.toLowerCase().includes(q);
+          const matchPhone = (b.number || b.client_no)?.toLowerCase().includes(q);
           const matchInstagram = b.instagram_user_id?.toLowerCase().includes(q);
           const matchDetailer = b.assigned_detailer?.toLowerCase().includes(q);
           const matchService = (SERVICE_LABELS[b.service] || b.service)?.toLowerCase().includes(q);
@@ -1444,13 +1444,13 @@ export default function OverviewPage() {
                         {booking.customer_name}
                       </div>
                       <div className="flex flex-col gap-0.5 mt-0.5">
-                        {booking.client_no && (
+                        {(booking.number || booking.client_no) && (
                           <a
-                            href={`tel:${booking.client_no.replace(/[^0-9+]/g, '')}`}
+                            href={`tel:${(booking.number || booking.client_no || '').replace(/[^0-9+]/g, '')}`}
                             className="inline-flex items-center gap-1 text-[11px] text-sage-700 hover:text-sage-900 font-medium"
                           >
                             <Phone className="w-2.5 h-2.5 shrink-0" />
-                            <span>{booking.client_no}</span>
+                            <span>{booking.number || booking.client_no}</span>
                           </a>
                         )}
                         {booking.instagram_user_id && (

@@ -1,136 +1,43 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 import { Booking, BookingStats, ServiceType } from '@/types/booking';
 
-interface LocalBookingMeta {
-  client_no?: string;
-  instagram_user_id?: string;
-  car_count?: number;
-  assigned_detailer?: string;
-}
-
-const META_STORAGE_KEY = 'car_wash_bookings_meta_v1';
-
-function getLocalMetaMap(): Record<string, LocalBookingMeta> {
-  if (typeof window === 'undefined') return {};
-  try {
-    const raw = localStorage.getItem(META_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : {};
-  } catch (e) {
-    console.error('[localStorage read error]:', e);
-    return {};
-  }
-}
-
-function saveLocalMeta(id: string, meta: LocalBookingMeta) {
-  if (typeof window === 'undefined' || !id) return;
-  try {
-    const all = getLocalMetaMap();
-    all[id] = {
-      ...(all[id] || {}),
-      ...(meta.client_no !== undefined ? { client_no: meta.client_no } : {}),
-      ...(meta.instagram_user_id !== undefined ? { instagram_user_id: meta.instagram_user_id } : {}),
-      ...(meta.car_count !== undefined ? { car_count: meta.car_count } : {}),
-      ...(meta.assigned_detailer !== undefined ? { assigned_detailer: meta.assigned_detailer } : {}),
-    };
-    localStorage.setItem(META_STORAGE_KEY, JSON.stringify(all));
-  } catch (e) {
-    console.error('[localStorage write error]:', e);
-  }
-}
-
-function removeLocalMeta(id: string) {
-  if (typeof window === 'undefined' || !id) return;
-  try {
-    const all = getLocalMetaMap();
-    delete all[id];
-    localStorage.setItem(META_STORAGE_KEY, JSON.stringify(all));
-  } catch (e) {
-    console.error('[localStorage remove error]:', e);
-  }
-}
-
 /**
- * Encodes metadata into address string if native database columns are missing.
- * This guarantees live sync across different devices via Supabase.
- */
-function encodeAddressWithMeta(
-  rawAddress: string,
-  meta: {
-    client_no?: string | null;
-    instagram_user_id?: string | null;
-    car_count?: number;
-    assigned_detailer?: string | null;
-  }
-): string {
-  const clean = (rawAddress || '').replace(/\n?<!--meta:[\s\S]*?-->/, '').trim();
-  const metaObj: Record<string, any> = {};
-  if (meta.client_no) metaObj.client_no = meta.client_no.trim();
-  if (meta.instagram_user_id) metaObj.instagram_user_id = meta.instagram_user_id.trim();
-  if (meta.car_count && meta.car_count > 1) metaObj.car_count = meta.car_count;
-  if (meta.assigned_detailer && meta.assigned_detailer !== 'Unassigned') {
-    metaObj.assigned_detailer = meta.assigned_detailer.trim();
-  }
-
-  if (Object.keys(metaObj).length === 0) {
-    return clean;
-  }
-
-  return `${clean}\n<!--meta:${JSON.stringify(metaObj)}-->`;
-}
-
-/**
- * Decodes a raw booking row from Supabase, extracting any embedded cross-device metadata.
+ * Decodes a raw booking row from Supabase into the application's Booking type.
+ * Ensures all dedicated database columns (customer_name, number, client_no,
+ * instagram_user_id, car_count, assigned_detailer, service, address, etc.)
+ * are mapped cleanly without any address contamination.
  */
 function decodeBookingFromDb(row: any): Booking {
-  let address = row.address || '';
-  let meta: LocalBookingMeta = {};
+  const rawAddr = row.address || '';
+  // Sanitize address in case legacy rows had embedded HTML comments
+  const cleanAddress = rawAddr.replace(/\n?<!--meta:[\s\S]*?-->/g, '').trim();
 
-  const match = address.match(/\n?<!--meta:([\s\S]*?)-->/);
+  // Try extracting legacy metadata if row was created under old address-encoding scheme
+  let legacyMeta: any = {};
+  const match = rawAddr.match(/\n?<!--meta:([\s\S]*?)-->/);
   if (match) {
     try {
-      meta = JSON.parse(match[1]);
-      address = address.replace(/\n?<!--meta:[\s\S]*?-->/, '').trim();
+      legacyMeta = JSON.parse(match[1]);
     } catch (e) {
-      console.warn('[decodeBookingFromDb metadata parse error]:', e);
+      console.warn('[decodeBookingFromDb legacy metadata parse error]:', e);
     }
   }
 
-  const localMap = getLocalMetaMap();
-  const localCache = localMap[row.id] || {};
-
-  const client_no = row.client_no || meta.client_no || localCache.client_no || undefined;
-  const instagram_user_id =
-    row.instagram_user_id || meta.instagram_user_id || localCache.instagram_user_id || undefined;
-  const car_count = row.car_count ?? meta.car_count ?? localCache.car_count ?? 1;
-  const assigned_detailer =
-    row.assigned_detailer && row.assigned_detailer !== 'Unassigned'
-      ? row.assigned_detailer
-      : (meta.assigned_detailer || localCache.assigned_detailer || row.assigned_detailer || 'Unassigned');
-
-  // Cache decoded metadata locally
-  if (
-    client_no ||
-    instagram_user_id ||
-    car_count > 1 ||
-    (assigned_detailer && assigned_detailer !== 'Unassigned')
-  ) {
-    saveLocalMeta(row.id, {
-      client_no,
-      instagram_user_id,
-      car_count,
-      assigned_detailer,
-    });
-  }
+  const phone = row.number || row.client_no || legacyMeta.number || legacyMeta.client_no || undefined;
+  const instagram_user_id = row.instagram_user_id || legacyMeta.instagram_user_id || undefined;
+  const car_count = row.car_count ?? legacyMeta.car_count ?? 1;
+  const assigned_detailer = row.assigned_detailer || legacyMeta.assigned_detailer || 'Unassigned';
 
   return {
     id: row.id,
     customer_name: row.customer_name,
-    client_no,
+    number: phone,
+    client_no: phone,
     instagram_user_id,
     car_count,
     assigned_detailer,
     service: row.service,
-    address,
+    address: cleanAddress,
     booking_date: row.booking_date,
     booking_time: row.booking_time,
     car_type: row.car_type,
@@ -145,7 +52,9 @@ function decodeBookingFromDb(row: any): Booking {
  */
 export async function getBookings(): Promise<Booking[]> {
   if (!isSupabaseConfigured()) {
-    console.warn('[Supabase] Credentials not configured. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local.');
+    console.warn(
+      '[Supabase] Credentials not configured. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local.'
+    );
     return [];
   }
 
@@ -232,20 +141,9 @@ function normalizeService(service?: ServiceType): ServiceType | undefined {
   return service;
 }
 
-function isSchemaMismatchError(error: any): boolean {
-  if (!error) return false;
-  const msg = (error.message || '').toLowerCase();
-  return (
-    error.code === 'PGRST204' ||
-    msg.includes('schema cache') ||
-    msg.includes('column') ||
-    msg.includes('could not find the')
-  );
-}
-
 /**
  * Add a new booking row to the bookings table.
- * Encodes cross-device metadata automatically if native columns are missing.
+ * Each piece of data is stored directly in its dedicated database column.
  */
 export async function addBooking(
   data: Omit<Booking, 'id' | 'status'>
@@ -254,73 +152,46 @@ export async function addBooking(
     throw new Error('Supabase is not configured. Please set your credentials in .env.local');
   }
 
-  const clientNo = data.client_no?.trim() || null;
+  const phone = data.number?.trim() || data.client_no?.trim() || null;
   const instagramUserId = data.instagram_user_id?.trim() || null;
   const carCount = Number(data.car_count) || 1;
   const assignedDetailer = data.assigned_detailer?.trim() || 'Unassigned';
+  const cleanAddress = (data.address || '').replace(/\n?<!--meta:[\s\S]*?-->/g, '').trim();
 
   const payload: any = {
-    ...data,
-    client_no: clientNo,
+    customer_name: data.customer_name.trim(),
+    number: phone,
+    client_no: phone,
     instagram_user_id: instagramUserId,
     car_count: carCount,
     assigned_detailer: assignedDetailer,
     service: normalizeService(data.service) || 'interior_silver',
+    address: cleanAddress,
+    booking_date: data.booking_date,
+    booking_time: data.booking_time,
+    car_type: data.car_type,
+    has_power: Boolean(data.has_power),
+    has_water: Boolean(data.has_water),
     status: 'scheduled',
   };
 
-  let createdRecord: any = null;
-
-  // First try inserting with native columns
-  let { data: created, error } = await supabase
+  const { data: created, error } = await supabase
     .from('bookings')
     .insert([payload])
     .select()
     .single();
 
-  // If columns are missing in Supabase schema, embed cross-device metadata in address
-  if (error && isSchemaMismatchError(error)) {
-    console.warn(
-      '[Supabase sync]: Native columns missing in table. Embedding cross-device metadata in row for live sync.'
-    );
-    const {
-      client_no: _c,
-      instagram_user_id: _ig,
-      car_count: _cc,
-      assigned_detailer: _ad,
-      address: rawAddr,
-      ...basePayload
-    } = payload;
-    const addressWithMeta = encodeAddressWithMeta(rawAddr, {
-      client_no: clientNo,
-      instagram_user_id: instagramUserId,
-      car_count: carCount,
-      assigned_detailer: assignedDetailer,
-    });
-
-    const retry = await supabase
-      .from('bookings')
-      .insert([{ ...basePayload, address: addressWithMeta }])
-      .select()
-      .single();
-
-    if (retry.error) {
-      throw new Error(retry.error.message);
-    }
-    createdRecord = retry.data;
-  } else if (error) {
+  if (error) {
     console.error('[Supabase addBooking error]:', error.message);
     throw new Error(error.message);
-  } else {
-    createdRecord = created;
   }
 
-  return decodeBookingFromDb(createdRecord);
+  return decodeBookingFromDb(created);
 }
 
 /**
  * Update an existing booking row.
- * Encodes cross-device metadata automatically if native columns are missing.
+ * Each piece of data is stored directly in its dedicated database column.
  */
 export async function updateBooking(
   id: string,
@@ -330,78 +201,49 @@ export async function updateBooking(
     throw new Error('Supabase is not configured. Please set your credentials in .env.local');
   }
 
-  const clientNo = data.client_no !== undefined ? (data.client_no?.trim() || null) : undefined;
+  const phone =
+    data.number !== undefined
+      ? (data.number?.trim() || null)
+      : (data.client_no !== undefined ? (data.client_no?.trim() || null) : undefined);
   const instagramUserId =
     data.instagram_user_id !== undefined ? (data.instagram_user_id?.trim() || null) : undefined;
   const carCount = data.car_count !== undefined ? (Number(data.car_count) || 1) : undefined;
-  const assignedDetailer = data.assigned_detailer !== undefined ? (data.assigned_detailer?.trim() || 'Unassigned') : undefined;
+  const assignedDetailer =
+    data.assigned_detailer !== undefined ? (data.assigned_detailer?.trim() || 'Unassigned') : undefined;
+  const cleanAddress =
+    data.address !== undefined
+      ? (data.address || '').replace(/\n?<!--meta:[\s\S]*?-->/g, '').trim()
+      : undefined;
 
   const updatePayload: any = {
-    ...data,
-    ...(data.service ? { service: normalizeService(data.service) } : {}),
-    ...(clientNo !== undefined ? { client_no: clientNo } : {}),
+    ...(data.customer_name !== undefined ? { customer_name: data.customer_name.trim() } : {}),
+    ...(phone !== undefined ? { number: phone, client_no: phone } : {}),
     ...(instagramUserId !== undefined ? { instagram_user_id: instagramUserId } : {}),
     ...(carCount !== undefined ? { car_count: carCount } : {}),
     ...(assignedDetailer !== undefined ? { assigned_detailer: assignedDetailer } : {}),
+    ...(data.service ? { service: normalizeService(data.service) } : {}),
+    ...(cleanAddress !== undefined ? { address: cleanAddress } : {}),
+    ...(data.booking_date !== undefined ? { booking_date: data.booking_date } : {}),
+    ...(data.booking_time !== undefined ? { booking_time: data.booking_time } : {}),
+    ...(data.car_type !== undefined ? { car_type: data.car_type } : {}),
+    ...(data.has_power !== undefined ? { has_power: Boolean(data.has_power) } : {}),
+    ...(data.has_water !== undefined ? { has_water: Boolean(data.has_water) } : {}),
+    ...(data.status !== undefined ? { status: data.status } : {}),
   };
 
-  let updatedRecord: any = null;
-
-  // First try updating with native columns
-  let { data: updated, error } = await supabase
+  const { data: updated, error } = await supabase
     .from('bookings')
     .update(updatePayload)
     .eq('id', id)
     .select()
     .single();
 
-  // If column doesn't exist in Supabase table schema, embed metadata in address
-  if (error && isSchemaMismatchError(error)) {
-    console.warn(
-      '[Supabase sync]: Native columns missing in table. Embedding cross-device metadata in update for live sync.'
-    );
-    const {
-      client_no: _c,
-      instagram_user_id: _ig,
-      car_count: _cc,
-      assigned_detailer: _ad,
-      address: rawAddr,
-      ...basePayload
-    } = updatePayload;
-    
-    // If address was not provided in this update, fetch current address first
-    let currentAddress = rawAddr;
-    if (!currentAddress) {
-      const { data: currentDoc } = await supabase.from('bookings').select('address').eq('id', id).single();
-      currentAddress = currentDoc?.address || '';
-    }
-
-    const addressWithMeta = encodeAddressWithMeta(currentAddress, {
-      client_no: clientNo,
-      instagram_user_id: instagramUserId,
-      car_count: carCount,
-      assigned_detailer: assignedDetailer,
-    });
-
-    const retry = await supabase
-      .from('bookings')
-      .update({ ...basePayload, address: addressWithMeta })
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (retry.error) {
-      throw new Error(retry.error.message);
-    }
-    updatedRecord = retry.data;
-  } else if (error) {
+  if (error) {
     console.error('[Supabase updateBooking error]:', error.message);
     throw new Error(error.message);
-  } else {
-    updatedRecord = updated;
   }
 
-  return decodeBookingFromDb(updatedRecord);
+  return decodeBookingFromDb(updated);
 }
 
 /**
@@ -411,8 +253,6 @@ export async function deleteBooking(id: string): Promise<void> {
   if (!isSupabaseConfigured()) {
     throw new Error('Supabase is not configured. Please set your credentials in .env.local');
   }
-
-  removeLocalMeta(id);
 
   const { error } = await supabase
     .from('bookings')

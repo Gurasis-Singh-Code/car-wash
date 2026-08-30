@@ -71,7 +71,7 @@ export default function BookingForm({
   const todayDateString = new Date().toISOString().split('T')[0];
 
   const [customerName, setCustomerName] = useState(initialData?.customer_name || '');
-  const [clientNo, setClientNo] = useState(initialData?.client_no || '');
+  const [clientNo, setClientNo] = useState(initialData?.number || initialData?.client_no || '');
   const [instagramUserId, setInstagramUserId] = useState(initialData?.instagram_user_id || '');
   const [carCount, setCarCount] = useState<number>(initialData?.car_count || 1);
   const [assignedDetailer, setAssignedDetailer] = useState(
@@ -93,7 +93,7 @@ export default function BookingForm({
   React.useEffect(() => {
     if (initialData) {
       setCustomerName(initialData.customer_name || '');
-      setClientNo(initialData.client_no || '');
+      setClientNo(initialData.number || initialData.client_no || '');
       setInstagramUserId(initialData.instagram_user_id || '');
       setCarCount(initialData.car_count || 1);
       setAssignedDetailer(
@@ -147,9 +147,12 @@ export default function BookingForm({
       return;
     }
 
+    const phoneVal = clientNo.trim() || undefined;
+
     const payload: BookingFormData = {
       customer_name: customerName.trim(),
-      client_no: clientNo.trim() || undefined,
+      number: phoneVal,
+      client_no: phoneVal,
       instagram_user_id: instagramUserId.trim() || undefined,
       car_count: Number(carCount) || 1,
       assigned_detailer: assignedDetailer.trim() || 'Unassigned',
@@ -276,13 +279,13 @@ export default function BookingForm({
             )}
           </div>
 
-          {/* Client No. / Phone */}
+          {/* Phone / Mobile Number */}
           <div>
             <label
               htmlFor="client_no"
               className="block text-xs font-semibold uppercase tracking-wider text-charcoal mb-1.5"
             >
-              Client No. / Phone
+              Phone / Mobile Number
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-charcoal-muted">
@@ -290,6 +293,7 @@ export default function BookingForm({
               </div>
               <input
                 id="client_no"
+                name="number"
                 type="tel"
                 value={clientNo}
                 onChange={(e) => setClientNo(e.target.value)}

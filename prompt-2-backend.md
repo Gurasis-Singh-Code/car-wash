@@ -18,6 +18,10 @@ create type booking_status as enum ('scheduled','completed','cancelled');
 create table bookings (
   id uuid primary key default gen_random_uuid(),
   customer_name text not null,
+  client_no text,
+  instagram_user_id text,
+  car_count integer not null default 1,
+  assigned_detailer text default 'Unassigned',
   service service_type not null,
   address text not null,
   booking_date date not null,
@@ -32,6 +36,7 @@ create table bookings (
 
 create index idx_bookings_date on bookings (booking_date, booking_time);
 create index idx_bookings_status on bookings (status);
+create index idx_bookings_instagram on bookings (instagram_user_id);
 
 create or replace function set_updated_at()
 returns trigger as $$

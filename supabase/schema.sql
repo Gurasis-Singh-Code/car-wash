@@ -1,6 +1,8 @@
 -- Supabase Schema for Absolute Mobile Car Detailing
 -- ==============================================================================
--- 🚀 MIGRATION: RUN THIS BLOCK IF YOU ALREADY CREATED THE BOOKINGS TABLE:
+-- 🚀 MIGRATION: RUN THIS BLOCK IF UPGRADING AN EXISTING BOOKINGS TABLE
+-- Ensures all metadata (Phone/Mobile No., Instagram User ID, Car Count,
+-- Assigned Detailer) has dedicated database columns and cleans legacy address data.
 -- ==============================================================================
 alter table bookings add column if not exists number text;
 alter table bookings add column if not exists client_no text;
@@ -8,8 +10,15 @@ alter table bookings add column if not exists instagram_user_id text;
 alter table bookings add column if not exists car_count integer not null default 1;
 alter table bookings add column if not exists assigned_detailer text default 'Unassigned';
 
+-- Performance & Query Indexes on dedicated columns
 create index if not exists idx_bookings_number on bookings (number);
 create index if not exists idx_bookings_instagram on bookings (instagram_user_id);
+create index if not exists idx_bookings_assigned_detailer on bookings (assigned_detailer);
+
+-- Clean up any legacy metadata embedded in the address column if present
+update bookings
+set address = regexp_replace(address, '\n?<!--meta:[\s\S]*?-->', '', 'g')
+where address like '%<!--meta:%';
 -- ==============================================================================
 
 create extension if not exists pgcrypto;
@@ -19,17 +28,17 @@ create type car_type as enum ('sedan','hatchback','suv','van','mini_truck','othe
 create type service_type as enum ('interior','full','interior_silver','interior_gold','full_silver','full_gold');
 create type booking_status as enum ('scheduled','completed','cancelled');
 
--- Bookings Table
+-- Bookings Table (Dedicated columns for every data field)
 create table if not exists bookings (
   id uuid primary key default gen_random_uuid(),
   customer_name text not null,
-  number text,
-  client_no text,
-  instagram_user_id text,
-  car_count integer not null default 1,
-  assigned_detailer text default 'Unassigned',
+  number text,                           -- Dedicated Phone/Mobile number column
+  client_no text,                        -- Client No. column
+  instagram_user_id text,                -- Dedicated Instagram User ID / Handle column
+  car_count integer not null default 1,  -- Dedicated vehicle count column
+  assigned_detailer text default 'Unassigned', -- Dedicated detailer assignment column
   service service_type not null,
-  address text not null,
+  address text not null,                 -- Clean physical service address only
   booking_date date not null,
   booking_time time not null,
   car_type car_type not null,
@@ -45,6 +54,7 @@ create index if not exists idx_bookings_date on bookings (booking_date, booking_
 create index if not exists idx_bookings_status on bookings (status);
 create index if not exists idx_bookings_instagram on bookings (instagram_user_id);
 create index if not exists idx_bookings_number on bookings (number);
+create index if not exists idx_bookings_assigned_detailer on bookings (assigned_detailer);
 
 -- Updated_at Trigger
 create or replace function set_updated_at()

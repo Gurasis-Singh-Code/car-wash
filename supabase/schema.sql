@@ -52,8 +52,9 @@ create extension if not exists pgcrypto;
 
 -- Custom Enums
 create type car_type as enum ('sedan','hatchback','suv','van','mini_truck','other');
-create type service_type as enum ('interior','full','interior_silver','interior_gold','full_silver','full_gold');
+create type service_type as enum ('interior_silver','interior_gold','full_silver','full_gold');
 create type booking_status as enum ('scheduled','completed','cancelled');
+create type lead_status as enum ('new','in_progress','details_collected','confirmed','converted','lost');
 
 -- Bookings Table (Dedicated columns for every data field)
 create table if not exists bookings (
@@ -61,10 +62,15 @@ create table if not exists bookings (
   customer_name text not null,
   number text,                           -- Dedicated Phone/Mobile number column
   client_no text,                        -- Client No. column
-  instagram_user_id text,                -- Dedicated Instagram User ID / Handle column
+  instagram_user_id text,                -- Instagram account ID from the automation
+  instagram_username text,               -- Instagram @handle
+  email text,
   car_count integer not null default 1,  -- Dedicated vehicle count column
+  vehicle_make_model text,
   assigned_detailer text default 'Unassigned', -- Dedicated detailer assignment column
   service service_type not null,
+  price numeric,                         -- Quoted price for the job
+  pet_hair boolean not null default false,
   address text not null,                 -- Clean physical service address only
   booking_date date not null,
   booking_time time not null,
@@ -72,6 +78,8 @@ create table if not exists bookings (
   has_power boolean not null default false,
   has_water boolean not null default false,
   status booking_status not null default 'scheduled',
+  notes text,
+  source text not null default 'manual', -- 'manual' | automation source (e.g. 'instagram')
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -116,3 +124,61 @@ select
   ) as week_count,
   count(*) filter (where status = 'completed') as completed_count
 from bookings;
+
+-- ==============================================================================
+-- LEADS TABLE
+-- Inbound Instagram DM enquiries captured by the n8n automation. A lead is
+-- created on first contact (often with nothing but an instagram_user_id) and is
+-- progressively enriched as the conversation collects details. When it turns
+-- into a real appointment, booking_id points at the resulting bookings row.
+-- ==============================================================================
+create table if not exists leads (
+  id uuid primary key default gen_random_uuid(),
+  instagram_user_id text not null unique,  -- Upsert key for the automation
+  instagram_username text,
+  customer_name text,
+  client_no text,
+  email text,
+  car_type car_type,
+  car_count integer default 1,
+  vehicle_make_model text,
+  service service_type,
+  pet_hair boolean not null default false,
+  address text,
+  booking_date date,
+  booking_time time,
+  has_power boolean,
+  has_water boolean,
+  price numeric,
+  notes text,
+  last_message text,                       -- Most recent inbound DM body
+  message_count integer not null default 0,
+  lead_status lead_status not null default 'new',
+  booking_id uuid references bookings (id),-- Set once the lead converts
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  last_message_at timestamptz not null default now()
+);
+
+create index if not exists leads_lead_status_idx on leads (lead_status);
+create index if not exists leads_last_message_at_idx on leads (last_message_at desc);
+
+create trigger leads_touch_updated_at
+before update on leads
+for each row execute function set_updated_at();
+
+alter table leads enable row level security;
+
+create policy "Authenticated users full access"
+on leads for all
+to authenticated
+using (true)
+with check (true);
+
+-- ==============================================================================
+-- REALTIME
+-- Both tables must belong to the supabase_realtime publication or the app's
+-- postgres_changes subscriptions ("Live Sync") receive no events at all.
+-- ==============================================================================
+alter publication supabase_realtime add table public.bookings;
+alter publication supabase_realtime add table public.leads;

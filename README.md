@@ -5,6 +5,7 @@ A modern, high-performance web application designed for mobile car detailing ope
 ## 🚀 Features
 
 - **Operations Dashboard (`/`)**: Live statistics (Today, This Week, Upcoming, Completed) and real-time appointment queue.
+- **Leads Pipeline (`/leads`)**: Inbound Instagram enquiries captured by the automation, with funnel metrics, stage filtering, search, and one-click stage progression from `new` through to `converted`.
 - **Admin Management Portal (`/admin`)**: Create, update, edit, and cancel bookings with optimistic UI updates and instant live synchronization across clients.
 - **Supabase Realtime Sync**: PostgreSQL triggers and realtime channels for instant UI updates.
 - **Secure Authentication (`/login`)**: Role-based access protection powered by Supabase Auth.

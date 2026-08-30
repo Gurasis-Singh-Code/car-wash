@@ -11,6 +11,7 @@ import {
 } from '@/types/lead';
 import { SERVICE_LABELS, CAR_TYPE_LABELS } from '@/types/booking';
 import { getLeads, updateLeadStatus, deleteLead, subscribeToLeads } from '@/lib/leads';
+import { resolveInstagram } from '@/lib/instagram';
 import { useAuth } from '@/components/AuthProvider';
 import ConfirmModal from '@/components/ConfirmModal';
 import {
@@ -100,19 +101,10 @@ function formatDisplayTime(timeStr?: string): string {
 
 /** Best available display name for a lead that may only have an Instagram ID. */
 function leadDisplayName(lead: Lead): string {
-  return (
-    lead.customer_name ||
-    (lead.instagram_username ? `@${lead.instagram_username.replace(/^@/, '')}` : '') ||
-    'Unidentified Lead'
-  );
+  const handle = resolveInstagram(lead.instagram_user_id, lead.instagram_username)?.handle;
+  return lead.customer_name || (handle ? `@${handle}` : '') || 'Unidentified Lead';
 }
 
-function instagramUrl(lead: Lead): string | null {
-  const handle = lead.instagram_username?.replace(/^@/, '').trim();
-  if (!handle) return null;
-  if (handle.startsWith('http')) return handle;
-  return `https://instagram.com/${handle}`;
-}
 
 export default function LeadsPage() {
   const { isConfigured } = useAuth();
@@ -553,7 +545,7 @@ export default function LeadsPage() {
             {filteredLeads.map((lead) => {
               const isUpdating = updatingId === lead.id;
               const style = LEAD_STATUS_STYLES[lead.lead_status];
-              const igUrl = instagramUrl(lead);
+              const ig = resolveInstagram(lead.instagram_user_id, lead.instagram_username);
 
               return (
                 <div
@@ -566,24 +558,24 @@ export default function LeadsPage() {
                       {leadDisplayName(lead)}
                     </h3>
 
-                    {igUrl ? (
+                    {ig?.handle ? (
                       <a
-                        href={igUrl}
+                        href={ig.url}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-pink-50 text-pink-700 hover:bg-pink-100 border border-pink-200/80 transition-colors active:scale-95"
-                        title={`Instagram profile: ${lead.instagram_username}`}
+                        title={`Instagram profile: @${ig.handle}`}
                       >
                         <Instagram className="w-3.5 h-3.5 text-pink-600 shrink-0" />
-                        <span>@{lead.instagram_username?.replace(/^@/, '')}</span>
+                        <span>@{ig.handle}</span>
                       </a>
                     ) : (
                       <span
                         className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-charcoal-surface text-charcoal-muted border border-charcoal-border/50"
-                        title="Instagram user ID from the automation (no username captured yet)"
+                        title="Instagram account ID from the automation (no username captured yet)"
                       >
                         <Instagram className="w-3.5 h-3.5 shrink-0" />
-                        <span className="font-mono">{lead.instagram_user_id}</span>
+                        <span className="font-mono">{ig?.accountId || lead.instagram_user_id}</span>
                       </span>
                     )}
 

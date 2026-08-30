@@ -9,6 +9,7 @@ import {
   BookingStatus,
 } from '@/types/booking';
 import ConfirmModal from './ConfirmModal';
+import { resolveInstagram } from '@/lib/instagram';
 import {
   Calendar,
   Clock,
@@ -329,27 +330,40 @@ export default function BookingList({
                         </a>
                       )}
 
-                      {/* Instagram User ID / Profile Link */}
-                      {booking.instagram_user_id && (
-                        <a
-                          href={
-                            booking.instagram_user_id.startsWith('http')
-                              ? booking.instagram_user_id
-                              : `https://instagram.com/${booking.instagram_user_id.replace(/^@/, '')}`
-                          }
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-pink-50 text-pink-700 hover:bg-pink-100 border border-pink-200/80 transition-colors active:scale-95 shadow-soft-xs"
-                          title={`Instagram profile: ${booking.instagram_user_id}`}
-                        >
-                          <Instagram className="w-3.5 h-3.5 text-pink-600 shrink-0" />
-                          <span>
-                            {booking.instagram_user_id.startsWith('@')
-                              ? booking.instagram_user_id
-                              : `@${booking.instagram_user_id}`}
-                          </span>
-                        </a>
-                      )}
+                      {/* Instagram profile link (handle) or raw account ID */}
+                      {(() => {
+                        const ig = resolveInstagram(
+                          booking.instagram_user_id,
+                          booking.instagram_username
+                        );
+                        if (!ig) return null;
+
+                        // A numeric account ID has no profile URL — show it plainly.
+                        if (!ig.handle) {
+                          return (
+                            <span
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-charcoal-surface text-charcoal-muted border border-charcoal-border/50"
+                              title="Instagram account ID from the automation (no username captured yet)"
+                            >
+                              <Instagram className="w-3.5 h-3.5 shrink-0" />
+                              <span className="font-mono">{ig.accountId}</span>
+                            </span>
+                          );
+                        }
+
+                        return (
+                          <a
+                            href={ig.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-pink-50 text-pink-700 hover:bg-pink-100 border border-pink-200/80 transition-colors active:scale-95 shadow-soft-xs"
+                            title={`Instagram profile: @${ig.handle}`}
+                          >
+                            <Instagram className="w-3.5 h-3.5 text-pink-600 shrink-0" />
+                            <span>@{ig.handle}</span>
+                          </a>
+                        );
+                      })()}
 
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sage-50 text-sage-800 border border-sage-200">
                         {SERVICE_LABELS[booking.service] || booking.service}

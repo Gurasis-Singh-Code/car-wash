@@ -13,7 +13,10 @@ export interface Booking {
   customer_name: string;
   number?: string;
   client_no?: string;
+  /** Numeric Instagram account ID, owned by the DM automation. Not linkable. */
   instagram_user_id?: string;
+  /** Public Instagram @handle (stored without the leading "@"). */
+  instagram_username?: string;
   car_count?: number;
   assigned_detailer?: string;
   service: ServiceType;

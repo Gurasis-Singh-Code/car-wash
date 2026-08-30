@@ -538,7 +538,9 @@ export default function OverviewPage() {
           const matchName = b.customer_name?.toLowerCase().includes(q);
           const matchAddress = b.address?.toLowerCase().includes(q);
           const matchPhone = (b.number || b.client_no)?.toLowerCase().includes(q);
-          const matchInstagram = b.instagram_user_id?.toLowerCase().includes(q);
+          const matchInstagram =
+            b.instagram_user_id?.toLowerCase().includes(q) ||
+            b.instagram_username?.toLowerCase().includes(q);
           const matchDetailer = b.assigned_detailer?.toLowerCase().includes(q);
           const matchService = (SERVICE_LABELS[b.service] || b.service)?.toLowerCase().includes(q);
           return matchName || matchAddress || matchPhone || matchInstagram || matchDetailer || matchService;

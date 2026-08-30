@@ -10,6 +10,7 @@ import {
   CAR_TYPE_LABELS,
   STATUS_LABELS,
 } from '@/types/booking';
+import { resolveInstagram } from '@/lib/instagram';
 import {
   Calendar,
   Clock,
@@ -72,7 +73,11 @@ export default function BookingForm({
 
   const [customerName, setCustomerName] = useState(initialData?.customer_name || '');
   const [clientNo, setClientNo] = useState(initialData?.number || initialData?.client_no || '');
-  const [instagramUserId, setInstagramUserId] = useState(initialData?.instagram_user_id || '');
+  // The form edits the public @handle. The numeric instagram_user_id is owned by
+  // the DM automation and is deliberately left untouched here.
+  const [instagramUsername, setInstagramUsername] = useState(
+    resolveInstagram(initialData?.instagram_user_id, initialData?.instagram_username)?.handle || ''
+  );
   const [carCount, setCarCount] = useState<number>(initialData?.car_count || 1);
   const [assignedDetailer, setAssignedDetailer] = useState(
     initialData?.assigned_detailer === 'Unassigned' ? '' : (initialData?.assigned_detailer || '')
@@ -94,7 +99,9 @@ export default function BookingForm({
     if (initialData) {
       setCustomerName(initialData.customer_name || '');
       setClientNo(initialData.number || initialData.client_no || '');
-      setInstagramUserId(initialData.instagram_user_id || '');
+      setInstagramUsername(
+        resolveInstagram(initialData.instagram_user_id, initialData.instagram_username)?.handle || ''
+      );
       setCarCount(initialData.car_count || 1);
       setAssignedDetailer(
         initialData.assigned_detailer === 'Unassigned' ? '' : (initialData.assigned_detailer || '')
@@ -153,7 +160,8 @@ export default function BookingForm({
       customer_name: customerName.trim(),
       number: phoneVal,
       client_no: phoneVal,
-      instagram_user_id: instagramUserId.trim() || undefined,
+      // Sent even when blank so clearing the field actually clears the column.
+      instagram_username: instagramUsername.trim().replace(/^@/, ''),
       car_count: Number(carCount) || 1,
       assigned_detailer: assignedDetailer.trim() || 'Unassigned',
       service,
@@ -185,7 +193,7 @@ export default function BookingForm({
       if (!isEditing) {
         setCustomerName('');
         setClientNo('');
-        setInstagramUserId('');
+        setInstagramUsername('');
         setCarCount(1);
         setAssignedDetailer('');
         setAddress('');
@@ -306,23 +314,23 @@ export default function BookingForm({
 
         {/* Row 2: Instagram User ID & Assigned Detailer */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5">
-          {/* Instagram User ID */}
+          {/* Instagram Username / Handle */}
           <div>
             <label
-              htmlFor="instagram_user_id"
+              htmlFor="instagram_username"
               className="block text-xs font-semibold uppercase tracking-wider text-charcoal mb-1.5"
             >
-              Instagram User ID
+              Instagram Username
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-charcoal-muted">
                 <Instagram className="w-4 h-4 text-pink-600" />
               </div>
               <input
-                id="instagram_user_id"
+                id="instagram_username"
                 type="text"
-                value={instagramUserId}
-                onChange={(e) => setInstagramUserId(e.target.value)}
+                value={instagramUsername}
+                onChange={(e) => setInstagramUsername(e.target.value)}
                 placeholder="e.g. @sarah_detailing"
                 className="w-full pl-10 pr-3.5 py-2.5 rounded-xl text-base sm:text-sm bg-[#FAF9F6] border border-charcoal-border text-charcoal placeholder:text-charcoal-light/70 focus:border-sage-500 focus:bg-white transition-colors"
               />

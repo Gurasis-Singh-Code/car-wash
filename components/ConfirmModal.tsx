@@ -27,9 +27,9 @@ export default function ConfirmModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3.5 sm:p-4 bg-charcoal/40 backdrop-blur-sm animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3.5 sm:p-4 bg-charcoal/40 dark:bg-black/70 backdrop-blur-sm animate-fade-in">
       <div
-        className="bg-white w-full max-w-md rounded-2xl p-5 sm:p-6 shadow-soft-lg border border-charcoal-border animate-scale-up"
+        className="bg-charcoal-card w-full max-w-md rounded-2xl p-5 sm:p-6 shadow-soft-lg border border-charcoal-border animate-scale-up"
         role="dialog"
         aria-modal="true"
       >

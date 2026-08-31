@@ -1,6 +1,30 @@
 import type { Config } from 'tailwindcss';
 
+/**
+ * Every colour is driven by a CSS variable holding raw "R G B" channels, so the
+ * existing class names (bg-canvas, text-charcoal, bg-sage-100/70, ...) swap
+ * palettes automatically when the `dark` class is on <html>. Channels rather
+ * than hex keeps Tailwind's opacity modifiers (`/60`, `/40`) working.
+ *
+ * Palette values live in app/globals.css.
+ */
+const token = (name: string) => `rgb(var(--${name}) / <alpha-value>)`;
+
+const ramp = (name: string) => ({
+  50: token(`${name}-50`),
+  100: token(`${name}-100`),
+  200: token(`${name}-200`),
+  300: token(`${name}-300`),
+  400: token(`${name}-400`),
+  500: token(`${name}-500`),
+  600: token(`${name}-600`),
+  700: token(`${name}-700`),
+  800: token(`${name}-800`),
+  900: token(`${name}-900`),
+});
+
 const config: Config = {
+  darkMode: 'class',
   content: [
     './pages/**/*.{js,ts,jsx,tsx,mdx}',
     './components/**/*.{js,ts,jsx,tsx,mdx}',
@@ -17,27 +41,22 @@ const config: Config = {
         xs: '360px',
       },
       colors: {
-        canvas: '#FAF9F6', // off-white
+        canvas: token('canvas'),
         charcoal: {
-          DEFAULT: '#2B2B2B',
-          muted: '#666666',
-          light: '#8E8E8E',
-          border: '#E5E4DE',
-          card: '#FFFFFF',
-          surface: '#F4F3EE',
+          DEFAULT: token('charcoal'),
+          muted: token('charcoal-muted'),
+          light: token('charcoal-light'),
+          border: token('charcoal-border'),
+          card: token('charcoal-card'),
+          surface: token('charcoal-surface'),
         },
-        sage: {
-          50: '#F5F7F4',
-          100: '#E9EFE7',
-          200: '#D5E0D1',
-          300: '#BACDB4',
-          400: '#9DB394',
-          500: '#7C8B6F', // Main accent
-          600: '#68775B',
-          700: '#536048',
-          800: '#404B37',
-          900: '#2E3627',
-        },
+        sage: ramp('sage'),
+        emerald: ramp('emerald'),
+        red: ramp('red'),
+        amber: ramp('amber'),
+        sky: ramp('sky'),
+        purple: ramp('purple'),
+        pink: ramp('pink'),
       },
       fontFamily: {
         sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],

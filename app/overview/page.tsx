@@ -631,7 +631,7 @@ export default function OverviewPage() {
         <div className="flex items-center gap-2 self-stretch sm:self-auto">
           <button
             onClick={() => loadData()}
-            className="p-2.5 rounded-xl border border-charcoal-border/60 bg-white hover:bg-sage-50 text-charcoal-muted hover:text-charcoal shadow-soft-sm transition-colors shrink-0"
+            className="p-2.5 rounded-xl border border-charcoal-border/60 bg-charcoal-card hover:bg-sage-50 text-charcoal-muted hover:text-charcoal shadow-soft-sm transition-colors shrink-0"
             title="Refresh Analytics"
             aria-label="Refresh Analytics"
           >
@@ -639,7 +639,7 @@ export default function OverviewPage() {
           </button>
           <Link
             href="/admin"
-            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-sage-500 hover:bg-sage-600 active:scale-[0.99] text-white text-xs sm:text-sm font-semibold rounded-xl shadow-soft-sm transition-all"
+            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-sage-500 hover:bg-sage-600 active:scale-[0.99] text-white dark:text-charcoal-card text-xs sm:text-sm font-semibold rounded-xl shadow-soft-sm transition-all"
           >
             <span>Manage Bookings</span>
             <ChevronRight className="w-3.5 h-3.5" />
@@ -656,7 +656,7 @@ export default function OverviewPage() {
           <div>
             <p className="font-semibold text-charcoal">Supabase Live Connection Ready</p>
             <p className="text-charcoal-muted mt-0.5">
-              Set <code className="font-mono bg-white px-1 py-0.5 rounded border border-sage-200">NEXT_PUBLIC_SUPABASE_URL</code> and <code className="font-mono bg-white px-1 py-0.5 rounded border border-sage-200">NEXT_PUBLIC_SUPABASE_ANON_KEY</code> in <code className="font-mono bg-white px-1 py-0.5 rounded border border-sage-200">.env.local</code> to aggregate live analytics.
+              Set <code className="font-mono bg-charcoal-card px-1 py-0.5 rounded border border-sage-200">NEXT_PUBLIC_SUPABASE_URL</code> and <code className="font-mono bg-charcoal-card px-1 py-0.5 rounded border border-sage-200">NEXT_PUBLIC_SUPABASE_ANON_KEY</code> in <code className="font-mono bg-charcoal-card px-1 py-0.5 rounded border border-sage-200">.env.local</code> to aggregate live analytics.
             </p>
           </div>
         </div>
@@ -671,7 +671,7 @@ export default function OverviewPage() {
       )}
 
       {/* Timeframe Filter Bar */}
-      <section aria-label="Timeframe Selector" className="bg-white rounded-2xl p-4 sm:p-5 border border-charcoal-border/60 shadow-soft-sm space-y-3.5">
+      <section aria-label="Timeframe Selector" className="bg-charcoal-card rounded-2xl p-4 sm:p-5 border border-charcoal-border/60 shadow-soft-sm space-y-3.5">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-charcoal-border/40">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-xl bg-sage-100 text-sage-800 flex items-center justify-center shrink-0">
@@ -688,14 +688,14 @@ export default function OverviewPage() {
           </div>
 
           {/* Timeframe Presets */}
-          <div className="flex flex-wrap items-center gap-1 p-1 bg-[#FAF9F6] border border-charcoal-border/70 rounded-xl overflow-x-auto">
+          <div className="flex flex-wrap items-center gap-1 p-1 bg-canvas border border-charcoal-border/70 rounded-xl overflow-x-auto">
             <button
               type="button"
               onClick={() => setTimeframePreset('this_week')}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
                 timeframePreset === 'this_week'
-                  ? 'bg-sage-600 text-white shadow-soft-xs'
-                  : 'text-charcoal-muted hover:text-charcoal hover:bg-white'
+                  ? 'bg-sage-600 text-white dark:text-charcoal-card shadow-soft-xs'
+                  : 'text-charcoal-muted hover:text-charcoal hover:bg-charcoal-card'
               }`}
             >
               This Week
@@ -706,8 +706,8 @@ export default function OverviewPage() {
               onClick={() => setTimeframePreset('last_week')}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
                 timeframePreset === 'last_week'
-                  ? 'bg-sage-600 text-white shadow-soft-xs'
-                  : 'text-charcoal-muted hover:text-charcoal hover:bg-white'
+                  ? 'bg-sage-600 text-white dark:text-charcoal-card shadow-soft-xs'
+                  : 'text-charcoal-muted hover:text-charcoal hover:bg-charcoal-card'
               }`}
             >
               Last Week
@@ -718,8 +718,8 @@ export default function OverviewPage() {
               onClick={() => setTimeframePreset('this_month')}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
                 timeframePreset === 'this_month'
-                  ? 'bg-sage-600 text-white shadow-soft-xs'
-                  : 'text-charcoal-muted hover:text-charcoal hover:bg-white'
+                  ? 'bg-sage-600 text-white dark:text-charcoal-card shadow-soft-xs'
+                  : 'text-charcoal-muted hover:text-charcoal hover:bg-charcoal-card'
               }`}
             >
               This Month
@@ -730,8 +730,8 @@ export default function OverviewPage() {
               onClick={() => setTimeframePreset('last_month')}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
                 timeframePreset === 'last_month'
-                  ? 'bg-sage-600 text-white shadow-soft-xs'
-                  : 'text-charcoal-muted hover:text-charcoal hover:bg-white'
+                  ? 'bg-sage-600 text-white dark:text-charcoal-card shadow-soft-xs'
+                  : 'text-charcoal-muted hover:text-charcoal hover:bg-charcoal-card'
               }`}
             >
               Last Month
@@ -742,8 +742,8 @@ export default function OverviewPage() {
               onClick={() => setTimeframePreset('last_30_days')}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
                 timeframePreset === 'last_30_days'
-                  ? 'bg-sage-600 text-white shadow-soft-xs'
-                  : 'text-charcoal-muted hover:text-charcoal hover:bg-white'
+                  ? 'bg-sage-600 text-white dark:text-charcoal-card shadow-soft-xs'
+                  : 'text-charcoal-muted hover:text-charcoal hover:bg-charcoal-card'
               }`}
             >
               30 Days
@@ -754,8 +754,8 @@ export default function OverviewPage() {
               onClick={() => setTimeframePreset('last_90_days')}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
                 timeframePreset === 'last_90_days'
-                  ? 'bg-sage-600 text-white shadow-soft-xs'
-                  : 'text-charcoal-muted hover:text-charcoal hover:bg-white'
+                  ? 'bg-sage-600 text-white dark:text-charcoal-card shadow-soft-xs'
+                  : 'text-charcoal-muted hover:text-charcoal hover:bg-charcoal-card'
               }`}
             >
               90 Days
@@ -766,8 +766,8 @@ export default function OverviewPage() {
               onClick={() => setTimeframePreset('this_year')}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
                 timeframePreset === 'this_year'
-                  ? 'bg-sage-600 text-white shadow-soft-xs'
-                  : 'text-charcoal-muted hover:text-charcoal hover:bg-white'
+                  ? 'bg-sage-600 text-white dark:text-charcoal-card shadow-soft-xs'
+                  : 'text-charcoal-muted hover:text-charcoal hover:bg-charcoal-card'
               }`}
             >
               This Year
@@ -778,8 +778,8 @@ export default function OverviewPage() {
               onClick={() => setTimeframePreset('all_time')}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
                 timeframePreset === 'all_time'
-                  ? 'bg-sage-600 text-white shadow-soft-xs'
-                  : 'text-charcoal-muted hover:text-charcoal hover:bg-white'
+                  ? 'bg-sage-600 text-white dark:text-charcoal-card shadow-soft-xs'
+                  : 'text-charcoal-muted hover:text-charcoal hover:bg-charcoal-card'
               }`}
             >
               All Time
@@ -790,8 +790,8 @@ export default function OverviewPage() {
               onClick={() => setTimeframePreset('custom')}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
                 timeframePreset === 'custom'
-                  ? 'bg-sage-600 text-white shadow-soft-xs'
-                  : 'text-charcoal-muted hover:text-charcoal hover:bg-white'
+                  ? 'bg-sage-600 text-white dark:text-charcoal-card shadow-soft-xs'
+                  : 'text-charcoal-muted hover:text-charcoal hover:bg-charcoal-card'
               }`}
             >
               Custom Range
@@ -808,7 +808,7 @@ export default function OverviewPage() {
                 type="date"
                 value={customRange.start}
                 onChange={(e) => setCustomRange((prev) => ({ ...prev, start: e.target.value }))}
-                className="px-3 py-2 sm:py-1.5 rounded-xl text-base sm:text-xs bg-[#FAF9F6] border border-charcoal-border focus:bg-white focus:border-sage-500 transition-all text-charcoal cursor-pointer"
+                className="px-3 py-2 sm:py-1.5 rounded-xl text-base sm:text-xs bg-canvas border border-charcoal-border focus:bg-charcoal-card focus:border-sage-500 transition-all text-charcoal cursor-pointer"
               />
             </div>
             <div className="flex items-center gap-2">
@@ -817,7 +817,7 @@ export default function OverviewPage() {
                 type="date"
                 value={customRange.end}
                 onChange={(e) => setCustomRange((prev) => ({ ...prev, end: e.target.value }))}
-                className="px-3 py-2 sm:py-1.5 rounded-xl text-base sm:text-xs bg-[#FAF9F6] border border-charcoal-border focus:bg-white focus:border-sage-500 transition-all text-charcoal cursor-pointer"
+                className="px-3 py-2 sm:py-1.5 rounded-xl text-base sm:text-xs bg-canvas border border-charcoal-border focus:bg-charcoal-card focus:border-sage-500 transition-all text-charcoal cursor-pointer"
               />
             </div>
             <button
@@ -834,7 +834,7 @@ export default function OverviewPage() {
       {/* KPI Performance Cards (4 Grid) */}
       <section aria-label="Key Performance Indicators" className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-6">
         {/* Total Bookings Card */}
-        <div className="bg-white rounded-xl p-3.5 sm:p-5 border border-charcoal-border/60 shadow-soft-sm hover:shadow-soft-md transition-all duration-200">
+        <div className="bg-charcoal-card rounded-xl p-3.5 sm:p-5 border border-charcoal-border/60 shadow-soft-sm hover:shadow-soft-md transition-all duration-200">
           <div className="flex items-center justify-between mb-2 sm:mb-3">
             <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-charcoal-muted">
               Total Volume
@@ -876,7 +876,7 @@ export default function OverviewPage() {
         </div>
 
         {/* Completed Bookings Card */}
-        <div className="bg-white rounded-xl p-3.5 sm:p-5 border border-charcoal-border/60 shadow-soft-sm hover:shadow-soft-md transition-all duration-200">
+        <div className="bg-charcoal-card rounded-xl p-3.5 sm:p-5 border border-charcoal-border/60 shadow-soft-sm hover:shadow-soft-md transition-all duration-200">
           <div className="flex items-center justify-between mb-2 sm:mb-3">
             <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-emerald-800">
               Completed Details
@@ -916,7 +916,7 @@ export default function OverviewPage() {
         </div>
 
         {/* Scheduled / Pending Bookings Card */}
-        <div className="bg-white rounded-xl p-3.5 sm:p-5 border border-charcoal-border/60 shadow-soft-sm hover:shadow-soft-md transition-all duration-200">
+        <div className="bg-charcoal-card rounded-xl p-3.5 sm:p-5 border border-charcoal-border/60 shadow-soft-sm hover:shadow-soft-md transition-all duration-200">
           <div className="flex items-center justify-between mb-2 sm:mb-3">
             <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-sage-800">
               Scheduled / Active
@@ -946,7 +946,7 @@ export default function OverviewPage() {
         </div>
 
         {/* Cancelled Bookings Card */}
-        <div className="bg-white rounded-xl p-3.5 sm:p-5 border border-charcoal-border/60 shadow-soft-sm hover:shadow-soft-md transition-all duration-200">
+        <div className="bg-charcoal-card rounded-xl p-3.5 sm:p-5 border border-charcoal-border/60 shadow-soft-sm hover:shadow-soft-md transition-all duration-200">
           <div className="flex items-center justify-between mb-2 sm:mb-3">
             <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-red-700">
               Cancelled
@@ -987,7 +987,7 @@ export default function OverviewPage() {
       </section>
 
       {/* Visual Rate Status Bar */}
-      <section aria-label="Status Distribution Bar" className="bg-white rounded-2xl p-4 sm:p-5 border border-charcoal-border/60 shadow-soft-sm space-y-3">
+      <section aria-label="Status Distribution Bar" className="bg-charcoal-card rounded-2xl p-4 sm:p-5 border border-charcoal-border/60 shadow-soft-sm space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <PieChart className="w-4 h-4 text-sage-600" />
@@ -1043,7 +1043,7 @@ export default function OverviewPage() {
       {/* Main Performance Grid: Time Series Chart & Breakdown Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-start">
         {/* Left / Top (8 Cols): Performance Chart across Time Intervals */}
-        <div className="lg:col-span-8 bg-white rounded-2xl p-4 sm:p-6 border border-charcoal-border/60 shadow-soft-sm space-y-4">
+        <div className="lg:col-span-8 bg-charcoal-card rounded-2xl p-4 sm:p-6 border border-charcoal-border/60 shadow-soft-sm space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-charcoal-border/40">
             <div>
               <h2 className="text-base sm:text-lg font-bold text-charcoal tracking-tight flex items-center gap-2">
@@ -1177,7 +1177,7 @@ export default function OverviewPage() {
         {/* Right (4 Cols): Utilities & Detailer Performance Insights */}
         <div className="lg:col-span-4 space-y-6">
           {/* Detailer Performance Workload Card */}
-          <div className="bg-white rounded-2xl p-4 sm:p-5 border border-charcoal-border/60 shadow-soft-sm space-y-3.5">
+          <div className="bg-charcoal-card rounded-2xl p-4 sm:p-5 border border-charcoal-border/60 shadow-soft-sm space-y-3.5">
             <div className="flex items-center justify-between pb-2 border-b border-charcoal-border/40">
               <div className="flex items-center gap-2">
                 <UserCheck className="w-4 h-4 text-purple-600" />
@@ -1197,7 +1197,7 @@ export default function OverviewPage() {
                 {detailerDistribution.map((d) => (
                   <div
                     key={d.name}
-                    className="p-2.5 rounded-xl bg-[#FAF9F6] border border-charcoal-border/50 hover:border-sage-300 transition-all text-xs space-y-1.5"
+                    className="p-2.5 rounded-xl bg-canvas border border-charcoal-border/50 hover:border-sage-300 transition-all text-xs space-y-1.5"
                   >
                     <div className="flex items-center justify-between font-semibold">
                       <span className="text-charcoal flex items-center gap-1.5">
@@ -1237,7 +1237,7 @@ export default function OverviewPage() {
           </div>
 
           {/* Utilities & On-Site Readiness Card */}
-          <div className="bg-white rounded-2xl p-4 sm:p-5 border border-charcoal-border/60 shadow-soft-sm space-y-3.5">
+          <div className="bg-charcoal-card rounded-2xl p-4 sm:p-5 border border-charcoal-border/60 shadow-soft-sm space-y-3.5">
             <div className="flex items-center justify-between pb-2 border-b border-charcoal-border/40">
               <div className="flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-sage-600" />
@@ -1281,7 +1281,7 @@ export default function OverviewPage() {
       {/* Secondary Breakdowns: Service Packages & Vehicle Types */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
         {/* Service Package Popularity Card */}
-        <div className="bg-white rounded-2xl p-4 sm:p-6 border border-charcoal-border/60 shadow-soft-sm space-y-4">
+        <div className="bg-charcoal-card rounded-2xl p-4 sm:p-6 border border-charcoal-border/60 shadow-soft-sm space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-charcoal-border/40">
             <div className="flex items-center gap-2">
               <Layers className="w-4 h-4 text-sage-600" />
@@ -1329,7 +1329,7 @@ export default function OverviewPage() {
         </div>
 
         {/* Vehicle Category Distribution */}
-        <div className="bg-white rounded-2xl p-4 sm:p-6 border border-charcoal-border/60 shadow-soft-sm space-y-4">
+        <div className="bg-charcoal-card rounded-2xl p-4 sm:p-6 border border-charcoal-border/60 shadow-soft-sm space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-charcoal-border/40">
             <div className="flex items-center gap-2">
               <Car className="w-4 h-4 text-sage-600" />
@@ -1373,7 +1373,7 @@ export default function OverviewPage() {
       </div>
 
       {/* Period Bookings Activity Explorer / Table */}
-      <section aria-label="Period Appointments Registry" className="bg-white rounded-2xl p-4 sm:p-6 border border-charcoal-border/60 shadow-soft-sm space-y-4">
+      <section aria-label="Period Appointments Registry" className="bg-charcoal-card rounded-2xl p-4 sm:p-6 border border-charcoal-border/60 shadow-soft-sm space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-charcoal-border/40">
           <div>
             <h2 className="text-base sm:text-lg font-bold text-charcoal tracking-tight">
@@ -1394,7 +1394,7 @@ export default function OverviewPage() {
                 placeholder="Search name, phone, detailer..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8 pr-3 py-2.5 sm:py-1.5 rounded-xl text-base sm:text-xs bg-[#FAF9F6] border border-charcoal-border focus:bg-white focus:border-sage-500 text-charcoal w-full sm:w-56"
+                className="pl-8 pr-3 py-2.5 sm:py-1.5 rounded-xl text-base sm:text-xs bg-canvas border border-charcoal-border focus:bg-charcoal-card focus:border-sage-500 text-charcoal w-full sm:w-56"
               />
               {searchQuery && (
                 <button
@@ -1408,13 +1408,13 @@ export default function OverviewPage() {
             </div>
 
             {/* Status Pills */}
-            <div className="flex flex-wrap items-center gap-1 p-1 bg-[#FAF9F6] border border-charcoal-border/70 rounded-xl">
+            <div className="flex flex-wrap items-center gap-1 p-1 bg-canvas border border-charcoal-border/70 rounded-xl">
               <button
                 type="button"
                 onClick={() => setTableStatusFilter('all')}
                 className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
                   tableStatusFilter === 'all'
-                    ? 'bg-white text-charcoal shadow-soft-xs'
+                    ? 'bg-charcoal-card text-charcoal shadow-soft-xs'
                     : 'text-charcoal-muted hover:text-charcoal'
                 }`}
               >
@@ -1472,7 +1472,7 @@ export default function OverviewPage() {
             {filteredTableBookings.map((booking) => (
               <div
                 key={booking.id}
-                className="rounded-xl border border-charcoal-border/60 bg-[#FAF9F6] p-3 space-y-2"
+                className="rounded-xl border border-charcoal-border/60 bg-canvas p-3 space-y-2"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
@@ -1492,7 +1492,7 @@ export default function OverviewPage() {
                   <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-sage-50 text-sage-800 border border-sage-200">
                     {SERVICE_LABELS[booking.service] || booking.service}
                   </span>
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-white text-charcoal-muted border border-charcoal-border/50">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-charcoal-card text-charcoal-muted border border-charcoal-border/50">
                     <Car className="w-3 h-3 shrink-0" />
                     <span>
                       {booking.car_count && booking.car_count > 1 ? `${booking.car_count}x ` : ''}

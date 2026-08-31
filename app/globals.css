@@ -2,10 +2,195 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Palette. Values are raw "R G B" channels so Tailwind opacity modifiers work.
+ * Light values are identical to the original hard-coded palette, so light mode
+ * is unchanged.
+ *
+ * Dark ramps invert the tint range: 50-300 become dark tints (backgrounds and
+ * borders) and 700-900 become light (text). 400-600 stay mid-tone, because
+ * those are used as solid fills that must keep white text readable.
+ */
 :root {
-  --background: #FAF9F6;
-  --foreground: #2B2B2B;
-  --accent-sage: #7C8B6F;
+  --canvas: 250 249 246;
+  --charcoal: 43 43 43;
+  --charcoal-muted: 102 102 102;
+  --charcoal-light: 142 142 142;
+  --charcoal-border: 229 228 222;
+  --charcoal-card: 255 255 255;
+  --charcoal-surface: 244 243 238;
+
+  --sage-50: 245 247 244;
+  --sage-100: 233 239 231;
+  --sage-200: 213 224 209;
+  --sage-300: 186 205 180;
+  --sage-400: 157 179 148;
+  --sage-500: 124 139 111;
+  --sage-600: 104 119 91;
+  --sage-700: 83 96 72;
+  --sage-800: 64 75 55;
+  --sage-900: 46 54 39;
+
+  --emerald-50: 236 253 245;
+  --emerald-100: 209 250 229;
+  --emerald-200: 167 243 208;
+  --emerald-300: 110 231 183;
+  --emerald-400: 52 211 153;
+  --emerald-500: 16 185 129;
+  --emerald-600: 5 150 105;
+  --emerald-700: 4 120 87;
+  --emerald-800: 6 95 70;
+  --emerald-900: 6 78 59;
+
+  --red-50: 254 242 242;
+  --red-100: 254 226 226;
+  --red-200: 254 202 202;
+  --red-300: 252 165 165;
+  --red-400: 248 113 113;
+  --red-500: 239 68 68;
+  --red-600: 220 38 38;
+  --red-700: 185 28 28;
+  --red-800: 153 27 27;
+  --red-900: 127 29 29;
+
+  --amber-50: 255 251 235;
+  --amber-100: 254 243 199;
+  --amber-200: 253 230 138;
+  --amber-300: 252 211 77;
+  --amber-400: 251 191 36;
+  --amber-500: 245 158 11;
+  --amber-600: 217 119 6;
+  --amber-700: 180 83 9;
+  --amber-800: 146 64 14;
+  --amber-900: 120 53 15;
+
+  --sky-50: 240 249 255;
+  --sky-100: 224 242 254;
+  --sky-200: 186 230 253;
+  --sky-300: 125 211 252;
+  --sky-400: 56 189 248;
+  --sky-500: 14 165 233;
+  --sky-600: 2 132 199;
+  --sky-700: 3 105 161;
+  --sky-800: 7 89 133;
+  --sky-900: 12 74 110;
+
+  --purple-50: 250 245 255;
+  --purple-100: 243 232 255;
+  --purple-200: 233 213 255;
+  --purple-300: 216 180 254;
+  --purple-400: 192 132 252;
+  --purple-500: 168 85 247;
+  --purple-600: 147 51 234;
+  --purple-700: 126 34 206;
+  --purple-800: 107 33 168;
+  --purple-900: 88 28 135;
+
+  --pink-50: 253 242 248;
+  --pink-100: 252 231 243;
+  --pink-200: 251 207 232;
+  --pink-300: 249 168 212;
+  --pink-400: 244 114 182;
+  --pink-500: 236 72 153;
+  --pink-600: 219 39 119;
+  --pink-700: 190 24 93;
+  --pink-800: 157 23 77;
+  --pink-900: 131 24 67;
+
+  --scrollbar-track: 250 249 246;
+  --scrollbar-thumb: 213 224 209;
+  --scrollbar-thumb-hover: 157 179 148;
+}
+
+.dark {
+  --canvas: 17 17 16;
+  --charcoal: 235 234 229;
+  --charcoal-muted: 159 157 150;
+  --charcoal-light: 124 122 116;
+  --charcoal-border: 56 55 50;
+  --charcoal-card: 29 29 27;
+  --charcoal-surface: 39 38 34;
+
+  --sage-50: 30 36 27;
+  --sage-100: 40 47 36;
+  --sage-200: 55 64 49;
+  --sage-300: 83 96 72;
+  --sage-400: 157 179 148;
+  --sage-500: 124 139 111;
+  --sage-600: 150 170 140;
+  --sage-700: 186 205 180;
+  --sage-800: 213 224 209;
+  --sage-900: 233 239 231;
+
+  --emerald-50: 5 40 31;
+  --emerald-100: 6 55 42;
+  --emerald-200: 6 78 59;
+  --emerald-300: 4 120 87;
+  --emerald-400: 52 211 153;
+  --emerald-500: 16 185 129;
+  --emerald-600: 5 150 105;
+  --emerald-700: 110 231 183;
+  --emerald-800: 167 243 208;
+  --emerald-900: 209 250 229;
+
+  --red-50: 60 20 20;
+  --red-100: 80 24 24;
+  --red-200: 127 29 29;
+  --red-300: 185 28 28;
+  --red-400: 248 113 113;
+  --red-500: 239 68 68;
+  --red-600: 239 68 68;
+  --red-700: 252 165 165;
+  --red-800: 254 202 202;
+  --red-900: 254 226 226;
+
+  --amber-50: 55 35 8;
+  --amber-100: 72 45 10;
+  --amber-200: 120 53 15;
+  --amber-300: 180 83 9;
+  --amber-400: 251 191 36;
+  --amber-500: 245 158 11;
+  --amber-600: 245 158 11;
+  --amber-700: 252 211 77;
+  --amber-800: 253 230 138;
+  --amber-900: 254 243 199;
+
+  --sky-50: 8 38 58;
+  --sky-100: 10 50 75;
+  --sky-200: 12 74 110;
+  --sky-300: 3 105 161;
+  --sky-400: 56 189 248;
+  --sky-500: 14 165 233;
+  --sky-600: 56 189 248;
+  --sky-700: 125 211 252;
+  --sky-800: 186 230 253;
+  --sky-900: 224 242 254;
+
+  --purple-50: 42 22 62;
+  --purple-100: 54 28 80;
+  --purple-200: 88 28 135;
+  --purple-300: 126 34 206;
+  --purple-400: 192 132 252;
+  --purple-500: 168 85 247;
+  --purple-600: 192 132 252;
+  --purple-700: 216 180 254;
+  --purple-800: 233 213 255;
+  --purple-900: 243 232 255;
+
+  --pink-50: 60 20 40;
+  --pink-100: 78 26 52;
+  --pink-200: 131 24 67;
+  --pink-300: 190 24 93;
+  --pink-400: 244 114 182;
+  --pink-500: 236 72 153;
+  --pink-600: 244 114 182;
+  --pink-700: 249 168 212;
+  --pink-800: 251 207 232;
+  --pink-900: 252 231 243;
+
+  --scrollbar-track: 17 17 16;
+  --scrollbar-thumb: 55 64 49;
+  --scrollbar-thumb-hover: 83 96 72;
 }
 
 html {
@@ -14,8 +199,8 @@ html {
 }
 
 body {
-  background-color: var(--background);
-  color: var(--foreground);
+  background-color: rgb(var(--canvas));
+  color: rgb(var(--charcoal));
   font-family: var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -85,14 +270,23 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 }
 
 ::-webkit-scrollbar-track {
-  background: #FAF9F6;
+  background: rgb(var(--scrollbar-track));
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #D5E0D1;
+  background: rgb(var(--scrollbar-thumb));
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #9DB394;
+  background: rgb(var(--scrollbar-thumb-hover));
+}
+
+/* Native controls (date pickers, select arrows) follow the theme */
+:root {
+  color-scheme: light;
+}
+
+.dark {
+  color-scheme: dark;
 }

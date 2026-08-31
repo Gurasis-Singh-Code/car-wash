@@ -197,14 +197,14 @@ export default function BookingList({
 
       {/* Status Filter Tabs (Scheduled / Completed / Cancelled / All) */}
       {showStatusFilter && (
-        <div className="flex items-center gap-1.5 p-1 bg-[#FAF9F6] border border-charcoal-border/70 rounded-2xl overflow-x-auto shadow-soft-xs">
+        <div className="flex items-center gap-1.5 p-1 bg-canvas border border-charcoal-border/70 rounded-2xl overflow-x-auto shadow-soft-xs">
           <button
             type="button"
             onClick={() => setSelectedStatusFilter('all')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
               selectedStatusFilter === 'all'
-                ? 'bg-white text-charcoal shadow-soft-xs border border-charcoal-border/80'
-                : 'text-charcoal-muted hover:text-charcoal hover:bg-white/60'
+                ? 'bg-charcoal-card text-charcoal shadow-soft-xs border border-charcoal-border/80'
+                : 'text-charcoal-muted hover:text-charcoal hover:bg-charcoal-card/60'
             }`}
           >
             <span>All</span>
@@ -273,7 +273,7 @@ export default function BookingList({
 
       {/* Empty State */}
       {sortedBookings.length === 0 ? (
-        <div className="bg-white rounded-xl p-8 sm:p-12 text-center border border-charcoal-border/60 shadow-soft-sm">
+        <div className="bg-charcoal-card rounded-xl p-8 sm:p-12 text-center border border-charcoal-border/60 shadow-soft-sm">
           <div className="w-12 h-12 rounded-2xl bg-sage-50 text-sage-600 flex items-center justify-center mx-auto mb-4 border border-sage-100">
             <CalendarX className="w-6 h-6" />
           </div>
@@ -307,7 +307,7 @@ export default function BookingList({
             return (
               <div
                 key={booking.id}
-                className="bg-white rounded-xl p-3.5 sm:p-5 border border-charcoal-border/60 shadow-soft-sm hover:shadow-soft-md hover:border-sage-300/80 transition-all duration-200"
+                className="bg-charcoal-card rounded-xl p-3.5 sm:p-5 border border-charcoal-border/60 shadow-soft-sm hover:shadow-soft-md hover:border-sage-300/80 transition-all duration-200"
               >
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4">
                   {/* Left & Middle details */}
@@ -450,7 +450,7 @@ export default function BookingList({
                         <span className="text-[11px] font-semibold uppercase tracking-wider text-charcoal-muted flex items-center gap-1">
                           Status:
                         </span>
-                        <div className="flex items-center p-0.5 rounded-lg bg-[#FAF9F6] border border-charcoal-border/70 shadow-soft-xs max-w-full overflow-x-auto">
+                        <div className="flex items-center p-0.5 rounded-lg bg-canvas border border-charcoal-border/70 shadow-soft-xs max-w-full overflow-x-auto">
                           {/* Schedule Toggle Button */}
                           <button
                             type="button"
@@ -458,7 +458,7 @@ export default function BookingList({
                             onClick={() => handleStatusToggle(booking, 'scheduled')}
                             className={`flex items-center gap-1 shrink-0 px-2.5 py-1.5 sm:py-1 rounded-md text-xs font-medium transition-all ${
                               booking.status === 'scheduled'
-                                ? 'bg-sage-600 text-white font-semibold shadow-soft-xs'
+                                ? 'bg-sage-600 text-white dark:text-charcoal-card font-semibold shadow-soft-xs'
                                 : 'text-charcoal-muted hover:text-sage-800 hover:bg-sage-50/80'
                             }`}
                             title="Set status to Scheduled"

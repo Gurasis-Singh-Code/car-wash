@@ -50,7 +50,7 @@ export default function StatCardsGrid({ stats }: StatCardsGridProps) {
         {[1, 2, 3, 4].map((index) => (
           <div
             key={index}
-            className="bg-white rounded-xl p-3.5 sm:p-5 border border-charcoal-border/60 shadow-soft-sm animate-pulse"
+            className="bg-charcoal-card rounded-xl p-3.5 sm:p-5 border border-charcoal-border/60 shadow-soft-sm animate-pulse"
           >
             <div className="flex items-center justify-between mb-3">
               <div className="h-3.5 bg-sage-100/80 rounded w-14 sm:w-20"></div>
@@ -74,7 +74,7 @@ export default function StatCardsGrid({ stats }: StatCardsGridProps) {
         return (
           <div
             key={config.key}
-            className="bg-white rounded-xl p-3.5 sm:p-5 border border-charcoal-border/60 shadow-soft-sm hover:shadow-soft-md transition-all duration-200"
+            className="bg-charcoal-card rounded-xl p-3.5 sm:p-5 border border-charcoal-border/60 shadow-soft-sm hover:shadow-soft-md transition-all duration-200"
           >
             <div className="flex items-center justify-between mb-2 sm:mb-3">
               <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-charcoal-muted">

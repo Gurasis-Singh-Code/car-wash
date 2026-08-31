@@ -26,9 +26,9 @@ export default function EditBookingModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-charcoal/40 backdrop-blur-sm animate-fade-in overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-charcoal/40 dark:bg-black/70 backdrop-blur-sm animate-fade-in overflow-y-auto">
       <div
-        className="relative bg-white w-full max-w-xl rounded-2xl shadow-soft-lg border border-charcoal-border my-4 sm:my-8 animate-scale-up max-h-[92vh] overflow-y-auto"
+        className="relative bg-charcoal-card w-full max-w-xl rounded-2xl shadow-soft-lg border border-charcoal-border my-4 sm:my-8 animate-scale-up max-h-[92vh] overflow-y-auto"
         role="dialog"
         aria-modal="true"
       >

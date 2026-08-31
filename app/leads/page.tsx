@@ -262,7 +262,7 @@ export default function LeadsPage() {
         <div className="flex items-center gap-2 self-stretch sm:self-auto">
           <button
             onClick={() => loadLeads()}
-            className="p-2.5 rounded-xl border border-charcoal-border/60 bg-white hover:bg-sage-50 text-charcoal-muted hover:text-charcoal shadow-soft-sm transition-colors shrink-0"
+            className="p-2.5 rounded-xl border border-charcoal-border/60 bg-charcoal-card hover:bg-sage-50 text-charcoal-muted hover:text-charcoal shadow-soft-sm transition-colors shrink-0"
             title="Refresh Leads"
             aria-label="Refresh Leads"
           >
@@ -270,7 +270,7 @@ export default function LeadsPage() {
           </button>
           <Link
             href="/admin"
-            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-sage-500 hover:bg-sage-600 active:scale-[0.99] text-white text-xs sm:text-sm font-semibold rounded-xl shadow-soft-sm transition-all"
+            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-sage-500 hover:bg-sage-600 active:scale-[0.99] text-white dark:text-charcoal-card text-xs sm:text-sm font-semibold rounded-xl shadow-soft-sm transition-all"
           >
             <span>Manage Bookings</span>
           </Link>
@@ -286,9 +286,9 @@ export default function LeadsPage() {
           <div>
             <p className="font-semibold text-charcoal">Supabase Live Connection Ready</p>
             <p className="text-charcoal-muted mt-0.5">
-              Set <code className="font-mono bg-white px-1 py-0.5 rounded border border-sage-200">NEXT_PUBLIC_SUPABASE_URL</code> and{' '}
-              <code className="font-mono bg-white px-1 py-0.5 rounded border border-sage-200">NEXT_PUBLIC_SUPABASE_ANON_KEY</code> in{' '}
-              <code className="font-mono bg-white px-1 py-0.5 rounded border border-sage-200">.env.local</code> to stream live leads.
+              Set <code className="font-mono bg-charcoal-card px-1 py-0.5 rounded border border-sage-200">NEXT_PUBLIC_SUPABASE_URL</code> and{' '}
+              <code className="font-mono bg-charcoal-card px-1 py-0.5 rounded border border-sage-200">NEXT_PUBLIC_SUPABASE_ANON_KEY</code> in{' '}
+              <code className="font-mono bg-charcoal-card px-1 py-0.5 rounded border border-sage-200">.env.local</code> to stream live leads.
             </p>
           </div>
         </div>
@@ -304,7 +304,7 @@ export default function LeadsPage() {
 
       {/* KPI Cards */}
       <section aria-label="Lead Metrics" className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-6">
-        <div className="bg-white rounded-xl p-3.5 sm:p-5 border border-charcoal-border/60 shadow-soft-sm hover:shadow-soft-md transition-all duration-200">
+        <div className="bg-charcoal-card rounded-xl p-3.5 sm:p-5 border border-charcoal-border/60 shadow-soft-sm hover:shadow-soft-md transition-all duration-200">
           <div className="flex items-center justify-between mb-2 sm:mb-3">
             <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-charcoal-muted">
               Total Leads
@@ -326,7 +326,7 @@ export default function LeadsPage() {
           </p>
         </div>
 
-        <div className="bg-white rounded-xl p-3.5 sm:p-5 border border-charcoal-border/60 shadow-soft-sm hover:shadow-soft-md transition-all duration-200">
+        <div className="bg-charcoal-card rounded-xl p-3.5 sm:p-5 border border-charcoal-border/60 shadow-soft-sm hover:shadow-soft-md transition-all duration-200">
           <div className="flex items-center justify-between mb-2 sm:mb-3">
             <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-amber-800">
               In Funnel
@@ -346,7 +346,7 @@ export default function LeadsPage() {
           </p>
         </div>
 
-        <div className="bg-white rounded-xl p-3.5 sm:p-5 border border-charcoal-border/60 shadow-soft-sm hover:shadow-soft-md transition-all duration-200">
+        <div className="bg-charcoal-card rounded-xl p-3.5 sm:p-5 border border-charcoal-border/60 shadow-soft-sm hover:shadow-soft-md transition-all duration-200">
           <div className="flex items-center justify-between mb-2 sm:mb-3">
             <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-emerald-800">
               Converted
@@ -368,7 +368,7 @@ export default function LeadsPage() {
           </p>
         </div>
 
-        <div className="bg-white rounded-xl p-3.5 sm:p-5 border border-charcoal-border/60 shadow-soft-sm hover:shadow-soft-md transition-all duration-200">
+        <div className="bg-charcoal-card rounded-xl p-3.5 sm:p-5 border border-charcoal-border/60 shadow-soft-sm hover:shadow-soft-md transition-all duration-200">
           <div className="flex items-center justify-between mb-2 sm:mb-3">
             <span className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-red-700">
               Lost
@@ -392,7 +392,7 @@ export default function LeadsPage() {
       {/* Pipeline Distribution Bar */}
       <section
         aria-label="Pipeline Distribution"
-        className="bg-white rounded-2xl p-4 sm:p-5 border border-charcoal-border/60 shadow-soft-sm space-y-3"
+        className="bg-charcoal-card rounded-2xl p-4 sm:p-5 border border-charcoal-border/60 shadow-soft-sm space-y-3"
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div className="flex items-center gap-2">
@@ -431,14 +431,14 @@ export default function LeadsPage() {
 
       {/* Filters: status tabs + search */}
       <section aria-label="Lead Filters" className="space-y-3">
-        <div className="flex items-center gap-1.5 p-1 bg-[#FAF9F6] border border-charcoal-border/70 rounded-2xl overflow-x-auto shadow-soft-sm">
+        <div className="flex items-center gap-1.5 p-1 bg-canvas border border-charcoal-border/70 rounded-2xl overflow-x-auto shadow-soft-sm">
           <button
             type="button"
             onClick={() => setStatusFilter('all')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
               statusFilter === 'all'
-                ? 'bg-white text-charcoal shadow-soft-sm border border-charcoal-border/80'
-                : 'text-charcoal-muted hover:text-charcoal hover:bg-white/60'
+                ? 'bg-charcoal-card text-charcoal shadow-soft-sm border border-charcoal-border/80'
+                : 'text-charcoal-muted hover:text-charcoal hover:bg-charcoal-card/60'
             }`}
           >
             <span>All</span>
@@ -464,14 +464,14 @@ export default function LeadsPage() {
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all border ${
                   isActive
                     ? `${style.tab} shadow-soft-sm`
-                    : 'border-transparent text-charcoal-muted hover:text-charcoal hover:bg-white/60'
+                    : 'border-transparent text-charcoal-muted hover:text-charcoal hover:bg-charcoal-card/60'
                 }`}
               >
                 <span className={`w-2 h-2 rounded-full ${style.dot}`} />
                 <span>{LEAD_STATUS_LABELS[status]}</span>
                 <span
                   className={`px-1.5 rounded-full text-[10px] font-bold ${
-                    isActive ? 'bg-white/70 text-charcoal' : 'bg-charcoal-border/40 text-charcoal-muted'
+                    isActive ? 'bg-charcoal-card/70 text-charcoal' : 'bg-charcoal-border/40 text-charcoal-muted'
                   }`}
                 >
                   {statusCounts[status]}
@@ -490,7 +490,7 @@ export default function LeadsPage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search by name, @handle, phone, email, address, vehicle, or message…"
-            className="w-full pl-10 pr-10 py-2.5 rounded-xl text-base sm:text-sm bg-white border border-charcoal-border text-charcoal placeholder:text-charcoal-light/70 focus:border-sage-500 transition-colors shadow-soft-sm"
+            className="w-full pl-10 pr-10 py-2.5 rounded-xl text-base sm:text-sm bg-charcoal-card border border-charcoal-border text-charcoal placeholder:text-charcoal-light/70 focus:border-sage-500 transition-colors shadow-soft-sm"
           />
           {searchQuery && (
             <button
@@ -527,7 +527,7 @@ export default function LeadsPage() {
       {/* Lead Cards */}
       <section aria-label="Lead List">
         {filteredLeads.length === 0 ? (
-          <div className="bg-white rounded-xl p-8 sm:p-12 text-center border border-charcoal-border/60 shadow-soft-sm">
+          <div className="bg-charcoal-card rounded-xl p-8 sm:p-12 text-center border border-charcoal-border/60 shadow-soft-sm">
             <div className="w-12 h-12 rounded-2xl bg-sage-50 text-sage-600 flex items-center justify-center mx-auto mb-4 border border-sage-100">
               <Inbox className="w-6 h-6" />
             </div>
@@ -550,7 +550,7 @@ export default function LeadsPage() {
               return (
                 <div
                   key={lead.id}
-                  className="bg-white rounded-xl p-3.5 sm:p-5 border border-charcoal-border/60 shadow-soft-sm hover:shadow-soft-md hover:border-sage-300/80 transition-all duration-200 space-y-3"
+                  className="bg-charcoal-card rounded-xl p-3.5 sm:p-5 border border-charcoal-border/60 shadow-soft-sm hover:shadow-soft-md hover:border-sage-300/80 transition-all duration-200 space-y-3"
                 >
                   {/* Row 1: identity + contact chips + status */}
                   <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
@@ -695,7 +695,7 @@ export default function LeadsPage() {
 
                   {/* Row 4: latest message */}
                   {lead.last_message && (
-                    <div className="p-2.5 rounded-xl bg-[#FAF9F6] border border-charcoal-border/50 text-xs space-y-1">
+                    <div className="p-2.5 rounded-xl bg-canvas border border-charcoal-border/50 text-xs space-y-1">
                       <div className="flex items-center justify-between gap-2 text-[11px] text-charcoal-muted">
                         <span className="inline-flex items-center gap-1 font-semibold">
                           <MessageSquare className="w-3 h-3 text-sage-600 shrink-0" />
@@ -733,7 +733,7 @@ export default function LeadsPage() {
                       value={lead.lead_status}
                       disabled={isUpdating}
                       onChange={(e) => handleStatusChange(lead, e.target.value as LeadStatus)}
-                      className="px-3 py-2 sm:py-1.5 rounded-lg text-sm sm:text-xs font-semibold bg-[#FAF9F6] border border-charcoal-border text-charcoal focus:border-sage-500 focus:bg-white transition-colors cursor-pointer disabled:opacity-60"
+                      className="px-3 py-2 sm:py-1.5 rounded-lg text-sm sm:text-xs font-semibold bg-canvas border border-charcoal-border text-charcoal focus:border-sage-500 focus:bg-charcoal-card transition-colors cursor-pointer disabled:opacity-60"
                     >
                       {LEAD_STATUS_ORDER.map((status) => (
                         <option key={status} value={status}>

@@ -9,7 +9,8 @@ A modern, high-performance web application designed for mobile car detailing ope
 - **Admin Management Portal (`/admin`)**: Create, update, edit, and cancel bookings with optimistic UI updates and instant live synchronization across clients.
 - **Supabase Realtime Sync**: PostgreSQL triggers and realtime channels for instant UI updates.
 - **Secure Authentication (`/login`)**: Role-based access protection powered by Supabase Auth.
-- **Responsive & Accessible Design**: Crafted with custom Tailwind typography, fluid states, and micro-interactions.
+- **Dark Mode**: Light / Dark / System toggle in the navbar, remembered across visits and applied before first paint (no flash). The whole palette is driven by CSS variables in `app/globals.css`, so components use plain class names (`bg-charcoal-card`, `text-charcoal`) and both themes stay in sync automatically.
+- **Responsive & Accessible Design**: Crafted with custom Tailwind typography, fluid states, and micro-interactions; verified from 320px up.
 
 ---
 

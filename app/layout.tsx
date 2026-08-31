@@ -3,6 +3,21 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import Navbar from '@/components/Navbar';
 import { AuthProvider } from '@/components/AuthProvider';
+import { ThemeProvider } from '@/components/ThemeProvider';
+
+/**
+ * Runs before first paint so the correct theme class is already on <html>.
+ * Without this the page renders light, then snaps to dark once React hydrates.
+ */
+const themeInitScript = `
+(function(){
+  try {
+    var t = localStorage.getItem('theme');
+    var dark = t === 'dark' || ((!t || t === 'system') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    document.documentElement.classList.toggle('dark', dark);
+  } catch (e) {}
+})();
+`;
 
 const inter = Inter({
   subsets: ['latin'],
@@ -27,14 +42,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className={inter.variable} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body className="min-h-screen bg-canvas text-charcoal flex flex-col font-sans antialiased selection:bg-sage-200">
-        <AuthProvider>
-          <Navbar />
-          <main className="flex-1 w-full max-w-7xl mx-auto safe-x px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
-            {children}
-          </main>
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <Navbar />
+            <main className="flex-1 w-full max-w-7xl mx-auto safe-x px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
+              {children}
+            </main>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

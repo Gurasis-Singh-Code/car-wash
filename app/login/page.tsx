@@ -41,10 +41,10 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-[75vh] flex items-center justify-center py-12 px-4 sm:px-6">
-      <div className="w-full max-w-md bg-white rounded-2xl p-7 sm:p-9 border border-charcoal-border/60 shadow-soft-md animate-fade-in">
+      <div className="w-full max-w-md bg-charcoal-card rounded-2xl p-7 sm:p-9 border border-charcoal-border/60 shadow-soft-md animate-fade-in">
         {/* Header Branding */}
         <div className="text-center mb-8">
-          <div className="w-12 h-12 rounded-2xl bg-sage-500 text-white flex items-center justify-center mx-auto mb-4 shadow-soft-sm">
+          <div className="w-12 h-12 rounded-2xl bg-sage-500 text-white dark:text-charcoal-card flex items-center justify-center mx-auto mb-4 shadow-soft-sm">
             <Sparkles className="w-6 h-6 text-[#FAF9F6]" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-charcoal">
@@ -97,7 +97,7 @@ export default function LoginPage() {
                   if (error) setError(null);
                 }}
                 placeholder="admin@absolutedetailing.com"
-                className="w-full pl-10 pr-3.5 py-3 sm:py-2.5 rounded-xl text-base sm:text-sm bg-[#FAF9F6] border border-charcoal-border text-charcoal placeholder:text-charcoal-light/70 focus:border-sage-500 focus:bg-white transition-colors"
+                className="w-full pl-10 pr-3.5 py-3 sm:py-2.5 rounded-xl text-base sm:text-sm bg-canvas border border-charcoal-border text-charcoal placeholder:text-charcoal-light/70 focus:border-sage-500 focus:bg-charcoal-card transition-colors"
               />
             </div>
           </div>
@@ -123,7 +123,7 @@ export default function LoginPage() {
                   if (error) setError(null);
                 }}
                 placeholder="••••••••••••"
-                className="w-full pl-10 pr-3.5 py-3 sm:py-2.5 rounded-xl text-base sm:text-sm bg-[#FAF9F6] border border-charcoal-border text-charcoal placeholder:text-charcoal-light/70 focus:border-sage-500 focus:bg-white transition-colors"
+                className="w-full pl-10 pr-3.5 py-3 sm:py-2.5 rounded-xl text-base sm:text-sm bg-canvas border border-charcoal-border text-charcoal placeholder:text-charcoal-light/70 focus:border-sage-500 focus:bg-charcoal-card transition-colors"
               />
             </div>
           </div>
@@ -132,7 +132,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3 px-4 rounded-xl bg-sage-500 hover:bg-sage-600 active:scale-[0.99] text-white font-medium text-sm shadow-soft-sm transition-all duration-150 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+              className="w-full py-3 px-4 rounded-xl bg-sage-500 hover:bg-sage-600 active:scale-[0.99] text-white dark:text-charcoal-card font-medium text-sm shadow-soft-sm transition-all duration-150 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <span>Authenticating...</span>

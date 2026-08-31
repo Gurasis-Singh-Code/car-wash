@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
+import ThemeToggle from '@/components/ThemeToggle';
 import { Sparkles, Calendar, BarChart3, Settings, LogOut, LogIn, Inbox } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -18,12 +19,12 @@ export default function Navbar() {
   const { user, signOut } = useAuth();
 
   return (
-    <header className="sticky top-0 z-30 w-full bg-[#FAF9F6]/95 backdrop-blur-md border-b border-[#E5E4DE] shadow-soft-xs">
+    <header className="sticky top-0 z-30 w-full bg-canvas/95 backdrop-blur-md border-b border-charcoal-border shadow-soft-xs">
       <div className="max-w-7xl mx-auto safe-x px-3 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between gap-2 h-16 sm:h-20">
           {/* Brand Logo & Name */}
           <Link href="/" className="flex items-center gap-2 sm:gap-2.5 group focus:outline-none shrink-0 min-w-0">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-sage-500 flex items-center justify-center text-white shadow-soft-sm group-hover:bg-sage-600 transition-colors shrink-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-sage-500 flex items-center justify-center text-white dark:text-charcoal-card shadow-soft-sm group-hover:bg-sage-600 transition-colors shrink-0">
               <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-[#FAF9F6]" />
             </div>
             <div className="min-w-0">
@@ -55,7 +56,7 @@ export default function Navbar() {
                     aria-current={isActive ? 'page' : undefined}
                     className={`flex items-center justify-center lg:justify-start gap-1.5 h-9 w-9 sm:h-10 sm:w-10 lg:h-auto lg:w-auto lg:px-3.5 lg:py-2 rounded-xl text-xs sm:text-sm font-medium transition-all ${
                       isActive
-                        ? 'bg-sage-500 text-white shadow-soft-sm'
+                        ? 'bg-sage-500 text-white dark:text-charcoal-card shadow-soft-sm'
                         : 'text-charcoal-muted hover:text-charcoal hover:bg-sage-100/70'
                     }`}
                     title={item.title}
@@ -66,6 +67,8 @@ export default function Navbar() {
                 );
               })}
             </nav>
+
+            <ThemeToggle />
 
             {/* Auth Sign In / Sign Out */}
             {user ? (

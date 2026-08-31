@@ -151,7 +151,7 @@ export default function AdminPage() {
         <div className="flex items-center gap-2 self-end sm:self-auto">
           <button
             onClick={() => loadBookings()}
-            className="p-2.5 rounded-xl border border-charcoal-border/60 bg-white hover:bg-sage-50 text-charcoal-muted hover:text-charcoal shadow-soft-sm transition-colors"
+            className="p-2.5 rounded-xl border border-charcoal-border/60 bg-charcoal-card hover:bg-sage-50 text-charcoal-muted hover:text-charcoal shadow-soft-sm transition-colors"
             title="Refresh Bookings"
             aria-label="Refresh Bookings"
           >
@@ -169,7 +169,7 @@ export default function AdminPage() {
           <div>
             <p className="font-semibold text-charcoal">Supabase Live Backend Ready</p>
             <p className="text-charcoal-muted mt-0.5">
-              Execute <code className="font-mono bg-white px-1 py-0.5 rounded border border-sage-200">supabase/schema.sql</code> in your Supabase SQL Editor and enter credentials in <code className="font-mono bg-white px-1 py-0.5 rounded border border-sage-200">.env.local</code> for full CRUD and Realtime sync.
+              Execute <code className="font-mono bg-charcoal-card px-1 py-0.5 rounded border border-sage-200">supabase/schema.sql</code> in your Supabase SQL Editor and enter credentials in <code className="font-mono bg-charcoal-card px-1 py-0.5 rounded border border-sage-200">.env.local</code> for full CRUD and Realtime sync.
             </p>
           </div>
         </div>

@@ -5,9 +5,17 @@ const config: Config = {
     './pages/**/*.{js,ts,jsx,tsx,mdx}',
     './components/**/*.{js,ts,jsx,tsx,mdx}',
     './app/**/*.{js,ts,jsx,tsx,mdx}',
+    // Class-name maps live here too (e.g. LEAD_STATUS_STYLES in types/lead.ts).
+    // Without these globs those classes are never generated and render as transparent.
+    './types/**/*.{js,ts,jsx,tsx,mdx}',
+    './lib/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
     extend: {
+      screens: {
+        // Smallest phones (iPhone SE and similar) sit below this.
+        xs: '360px',
+      },
       colors: {
         canvas: '#FAF9F6', // off-white
         charcoal: {

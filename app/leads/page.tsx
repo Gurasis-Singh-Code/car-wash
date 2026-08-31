@@ -431,7 +431,7 @@ export default function LeadsPage() {
 
       {/* Filters: status tabs + search */}
       <section aria-label="Lead Filters" className="space-y-3">
-        <div className="flex items-center gap-1.5 p-1 bg-[#FAF9F6] border border-charcoal-border/70 rounded-2xl overflow-x-auto no-scrollbar shadow-soft-sm">
+        <div className="flex items-center gap-1.5 p-1 bg-[#FAF9F6] border border-charcoal-border/70 rounded-2xl overflow-x-auto shadow-soft-sm">
           <button
             type="button"
             onClick={() => setStatusFilter('all')}
@@ -733,7 +733,7 @@ export default function LeadsPage() {
                       value={lead.lead_status}
                       disabled={isUpdating}
                       onChange={(e) => handleStatusChange(lead, e.target.value as LeadStatus)}
-                      className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#FAF9F6] border border-charcoal-border text-charcoal focus:border-sage-500 focus:bg-white transition-colors cursor-pointer disabled:opacity-60"
+                      className="px-3 py-2 sm:py-1.5 rounded-lg text-sm sm:text-xs font-semibold bg-[#FAF9F6] border border-charcoal-border text-charcoal focus:border-sage-500 focus:bg-white transition-colors cursor-pointer disabled:opacity-60"
                     >
                       {LEAD_STATUS_ORDER.map((status) => (
                         <option key={status} value={status}>

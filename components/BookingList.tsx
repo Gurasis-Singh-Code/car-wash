@@ -197,7 +197,7 @@ export default function BookingList({
 
       {/* Status Filter Tabs (Scheduled / Completed / Cancelled / All) */}
       {showStatusFilter && (
-        <div className="flex items-center gap-1.5 p-1 bg-[#FAF9F6] border border-charcoal-border/70 rounded-2xl overflow-x-auto no-scrollbar shadow-soft-xs">
+        <div className="flex items-center gap-1.5 p-1 bg-[#FAF9F6] border border-charcoal-border/70 rounded-2xl overflow-x-auto shadow-soft-xs">
           <button
             type="button"
             onClick={() => setSelectedStatusFilter('all')}
@@ -450,13 +450,13 @@ export default function BookingList({
                         <span className="text-[11px] font-semibold uppercase tracking-wider text-charcoal-muted flex items-center gap-1">
                           Status:
                         </span>
-                        <div className="inline-flex items-center p-0.5 rounded-lg bg-[#FAF9F6] border border-charcoal-border/70 shadow-soft-xs">
+                        <div className="flex items-center p-0.5 rounded-lg bg-[#FAF9F6] border border-charcoal-border/70 shadow-soft-xs max-w-full overflow-x-auto">
                           {/* Schedule Toggle Button */}
                           <button
                             type="button"
                             disabled={isUpdating}
                             onClick={() => handleStatusToggle(booking, 'scheduled')}
-                            className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+                            className={`flex items-center gap-1 shrink-0 px-2.5 py-1.5 sm:py-1 rounded-md text-xs font-medium transition-all ${
                               booking.status === 'scheduled'
                                 ? 'bg-sage-600 text-white font-semibold shadow-soft-xs'
                                 : 'text-charcoal-muted hover:text-sage-800 hover:bg-sage-50/80'
@@ -472,7 +472,7 @@ export default function BookingList({
                             type="button"
                             disabled={isUpdating}
                             onClick={() => handleStatusToggle(booking, 'completed')}
-                            className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+                            className={`flex items-center gap-1 shrink-0 px-2.5 py-1.5 sm:py-1 rounded-md text-xs font-medium transition-all ${
                               booking.status === 'completed'
                                 ? 'bg-emerald-600 text-white font-semibold shadow-soft-xs'
                                 : 'text-charcoal-muted hover:text-emerald-800 hover:bg-emerald-50/80'
@@ -488,7 +488,7 @@ export default function BookingList({
                             type="button"
                             disabled={isUpdating}
                             onClick={() => handleStatusToggle(booking, 'cancelled')}
-                            className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+                            className={`flex items-center gap-1 shrink-0 px-2.5 py-1.5 sm:py-1 rounded-md text-xs font-medium transition-all ${
                               booking.status === 'cancelled'
                                 ? 'bg-red-600 text-white font-semibold shadow-soft-xs'
                                 : 'text-charcoal-muted hover:text-red-800 hover:bg-red-50/80'

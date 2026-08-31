@@ -9,6 +9,7 @@ import {
   CAR_TYPE_LABELS,
 } from '@/types/booking';
 import { getBookings, subscribeToBookings } from '@/lib/bookings';
+import { resolveInstagram } from '@/lib/instagram';
 import { useAuth } from '@/components/AuthProvider';
 import {
   BarChart3,
@@ -97,6 +98,60 @@ function formatShortDate(dateStr: string): string {
     // fallback
   }
   return dateStr;
+}
+
+/** Shared status pill, used by both the mobile card list and the desktop table. */
+function StatusBadge({ status }: { status: BookingStatus }) {
+  if (status === 'completed') {
+    return (
+      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+        <CheckCircle2 className="w-3 h-3" />
+        <span>Completed</span>
+      </span>
+    );
+  }
+  if (status === 'cancelled') {
+    return (
+      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-red-50 text-red-700 border border-red-200/60">
+        <AlertCircle className="w-3 h-3" />
+        <span>Cancelled</span>
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-sage-100 text-sage-800 border border-sage-200/80">
+      <Clock3 className="w-3 h-3" />
+      <span>Scheduled</span>
+    </span>
+  );
+}
+
+/** Instagram handle link, or the raw account ID when no handle is known. */
+function InstagramTag({ booking }: { booking: Booking }) {
+  const ig = resolveInstagram(booking.instagram_user_id, booking.instagram_username);
+  if (!ig) return null;
+
+  if (!ig.handle) {
+    return (
+      <span className="inline-flex items-center gap-1 text-[11px] text-charcoal-muted font-mono truncate max-w-[150px]">
+        <Instagram className="w-2.5 h-2.5 shrink-0" />
+        <span>{ig.accountId}</span>
+      </span>
+    );
+  }
+
+  return (
+    <a
+      href={ig.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-1 text-[11px] text-pink-700 hover:text-pink-900 font-medium truncate max-w-[150px]"
+      title={`Instagram: @${ig.handle}`}
+    >
+      <Instagram className="w-2.5 h-2.5 shrink-0 text-pink-600" />
+      <span>@{ig.handle}</span>
+    </a>
+  );
 }
 
 function getPresetRange(preset: TimeframePreset): { current: DateRange; prior: DateRange; label: string } {
@@ -753,7 +808,7 @@ export default function OverviewPage() {
                 type="date"
                 value={customRange.start}
                 onChange={(e) => setCustomRange((prev) => ({ ...prev, start: e.target.value }))}
-                className="px-3 py-1.5 rounded-xl text-xs bg-[#FAF9F6] border border-charcoal-border focus:bg-white focus:border-sage-500 transition-all text-charcoal cursor-pointer"
+                className="px-3 py-2 sm:py-1.5 rounded-xl text-base sm:text-xs bg-[#FAF9F6] border border-charcoal-border focus:bg-white focus:border-sage-500 transition-all text-charcoal cursor-pointer"
               />
             </div>
             <div className="flex items-center gap-2">
@@ -762,7 +817,7 @@ export default function OverviewPage() {
                 type="date"
                 value={customRange.end}
                 onChange={(e) => setCustomRange((prev) => ({ ...prev, end: e.target.value }))}
-                className="px-3 py-1.5 rounded-xl text-xs bg-[#FAF9F6] border border-charcoal-border focus:bg-white focus:border-sage-500 transition-all text-charcoal cursor-pointer"
+                className="px-3 py-2 sm:py-1.5 rounded-xl text-base sm:text-xs bg-[#FAF9F6] border border-charcoal-border focus:bg-white focus:border-sage-500 transition-all text-charcoal cursor-pointer"
               />
             </div>
             <button
@@ -1026,7 +1081,7 @@ export default function OverviewPage() {
             </div>
           ) : (
             <div className="pt-4 pb-2">
-              <div className="flex items-end gap-2 sm:gap-3 h-52 sm:h-64 w-full px-1 border-b border-charcoal-border/70 overflow-x-auto no-scrollbar">
+              <div className="flex items-end gap-2 sm:gap-3 h-52 sm:h-64 w-full px-1 border-b border-charcoal-border/70 overflow-x-auto">
                 {timeSeriesData.items.map((item) => {
                   const total = item.total;
                   const completedRatio = total > 0 ? item.completed / total : 0;
@@ -1339,7 +1394,7 @@ export default function OverviewPage() {
                 placeholder="Search name, phone, detailer..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8 pr-3 py-1.5 rounded-xl text-xs bg-[#FAF9F6] border border-charcoal-border focus:bg-white focus:border-sage-500 text-charcoal w-full sm:w-56"
+                className="pl-8 pr-3 py-2.5 sm:py-1.5 rounded-xl text-base sm:text-xs bg-[#FAF9F6] border border-charcoal-border focus:bg-white focus:border-sage-500 text-charcoal w-full sm:w-56"
               />
               {searchQuery && (
                 <button
@@ -1353,7 +1408,7 @@ export default function OverviewPage() {
             </div>
 
             {/* Status Pills */}
-            <div className="flex items-center gap-1 p-0.5 bg-[#FAF9F6] border border-charcoal-border/70 rounded-xl overflow-x-auto">
+            <div className="flex flex-wrap items-center gap-1 p-1 bg-[#FAF9F6] border border-charcoal-border/70 rounded-xl">
               <button
                 type="button"
                 onClick={() => setTableStatusFilter('all')}
@@ -1411,7 +1466,83 @@ export default function OverviewPage() {
             No matching appointments found for this filter criteria.
           </div>
         ) : (
-          <div className="overflow-x-auto no-scrollbar">
+          <>
+          {/* Mobile card list - a 7 column table is unreadable on a phone */}
+          <div className="md:hidden space-y-2.5">
+            {filteredTableBookings.map((booking) => (
+              <div
+                key={booking.id}
+                className="rounded-xl border border-charcoal-border/60 bg-[#FAF9F6] p-3 space-y-2"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="font-bold text-charcoal text-sm truncate" title={booking.customer_name}>
+                      {booking.customer_name}
+                    </p>
+                    <p className="text-[11px] text-charcoal-muted">
+                      {formatDisplayDate(booking.booking_date)} &bull; {booking.booking_time}
+                    </p>
+                  </div>
+                  <div className="shrink-0">
+                    <StatusBadge status={booking.status} />
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-sage-50 text-sage-800 border border-sage-200">
+                    {SERVICE_LABELS[booking.service] || booking.service}
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-white text-charcoal-muted border border-charcoal-border/50">
+                    <Car className="w-3 h-3 shrink-0" />
+                    <span>
+                      {booking.car_count && booking.car_count > 1 ? `${booking.car_count}x ` : ''}
+                      {CAR_TYPE_LABELS[booking.car_type] || booking.car_type}
+                    </span>
+                  </span>
+                  {booking.assigned_detailer && booking.assigned_detailer !== 'Unassigned' && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-purple-50 text-purple-700 border border-purple-200/60">
+                      <UserCheck className="w-3 h-3 shrink-0" />
+                      <span>{booking.assigned_detailer}</span>
+                    </span>
+                  )}
+                  {booking.has_power && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-50 text-amber-800 border border-amber-200/70">
+                      <Zap className="w-3 h-3 shrink-0" />
+                      Power
+                    </span>
+                  )}
+                  {booking.has_water && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-sky-50 text-sky-800 border border-sky-200/70">
+                      <Droplet className="w-3 h-3 shrink-0" />
+                      Water
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pt-1.5 border-t border-charcoal-border/40">
+                  {(booking.number || booking.client_no) && (
+                    <a
+                      href={`tel:${(booking.number || booking.client_no || '').replace(/[^0-9+]/g, '')}`}
+                      className="inline-flex items-center gap-1 text-[11px] text-sage-700 font-medium py-1"
+                    >
+                      <Phone className="w-3 h-3 shrink-0" />
+                      <span>{booking.number || booking.client_no}</span>
+                    </a>
+                  )}
+                  <InstagramTag booking={booking} />
+                </div>
+
+                {booking.address && (
+                  <p className="text-[11px] text-charcoal-muted break-words" title={booking.address}>
+                    {booking.address}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
                 <tr className="border-b border-charcoal-border/60 text-charcoal-muted font-semibold uppercase tracking-wider text-[10px]">
@@ -1455,26 +1586,7 @@ export default function OverviewPage() {
                             <span>{booking.number || booking.client_no}</span>
                           </a>
                         )}
-                        {booking.instagram_user_id && (
-                          <a
-                            href={
-                              booking.instagram_user_id.startsWith('http')
-                                ? booking.instagram_user_id
-                                : `https://instagram.com/${booking.instagram_user_id.replace(/^@/, '')}`
-                            }
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-[11px] text-pink-700 hover:text-pink-900 font-medium truncate max-w-[150px]"
-                            title={`Instagram: ${booking.instagram_user_id}`}
-                          >
-                            <Instagram className="w-2.5 h-2.5 shrink-0 text-pink-600" />
-                            <span>
-                              {booking.instagram_user_id.startsWith('@')
-                                ? booking.instagram_user_id
-                                : `@${booking.instagram_user_id}`}
-                            </span>
-                          </a>
-                        )}
+                        <InstagramTag booking={booking} />
                       </div>
                       <div className="text-[10px] text-charcoal-muted truncate max-w-[160px] mt-0.5" title={booking.address}>
                         {booking.address}
@@ -1531,30 +1643,14 @@ export default function OverviewPage() {
 
                     {/* Status Badge */}
                     <td className="py-3 px-3 whitespace-nowrap text-right">
-                      {booking.status === 'completed' && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/60">
-                          <CheckCircle2 className="w-3 h-3" />
-                          <span>Completed</span>
-                        </span>
-                      )}
-                      {booking.status === 'scheduled' && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-sage-100 text-sage-800 border border-sage-200/80">
-                          <Clock3 className="w-3 h-3" />
-                          <span>Scheduled</span>
-                        </span>
-                      )}
-                      {booking.status === 'cancelled' && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-red-50 text-red-700 border border-red-200/60">
-                          <AlertCircle className="w-3 h-3" />
-                          <span>Cancelled</span>
-                        </span>
-                      )}
+                      <StatusBadge status={booking.status} />
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+          </>
         )}
       </section>
     </div>

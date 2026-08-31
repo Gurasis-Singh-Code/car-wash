@@ -97,7 +97,7 @@ export default function LoginPage() {
                   if (error) setError(null);
                 }}
                 placeholder="admin@absolutedetailing.com"
-                className="w-full pl-10 pr-3.5 py-2.5 rounded-xl text-sm bg-[#FAF9F6] border border-charcoal-border text-charcoal placeholder:text-charcoal-light/70 focus:border-sage-500 focus:bg-white transition-colors"
+                className="w-full pl-10 pr-3.5 py-3 sm:py-2.5 rounded-xl text-base sm:text-sm bg-[#FAF9F6] border border-charcoal-border text-charcoal placeholder:text-charcoal-light/70 focus:border-sage-500 focus:bg-white transition-colors"
               />
             </div>
           </div>
@@ -123,7 +123,7 @@ export default function LoginPage() {
                   if (error) setError(null);
                 }}
                 placeholder="••••••••••••"
-                className="w-full pl-10 pr-3.5 py-2.5 rounded-xl text-sm bg-[#FAF9F6] border border-charcoal-border text-charcoal placeholder:text-charcoal-light/70 focus:border-sage-500 focus:bg-white transition-colors"
+                className="w-full pl-10 pr-3.5 py-3 sm:py-2.5 rounded-xl text-base sm:text-sm bg-[#FAF9F6] border border-charcoal-border text-charcoal placeholder:text-charcoal-light/70 focus:border-sage-500 focus:bg-white transition-colors"
               />
             </div>
           </div>

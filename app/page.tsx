@@ -352,7 +352,7 @@ export default function HomePage() {
                 type="date"
                 value={selectedCustomDate}
                 onChange={(e) => handleCustomDateChange(e.target.value)}
-                className={`w-full pl-9 pr-3 py-2 rounded-xl text-xs bg-[#FAF9F6] border ${
+                className={`w-full pl-9 pr-3 py-2.5 sm:py-2 rounded-xl text-base sm:text-xs bg-[#FAF9F6] border ${
                   filterPreset === 'custom_date' && selectedCustomDate
                     ? 'border-sage-500 ring-2 ring-sage-400/20 bg-white font-medium text-charcoal'
                     : 'border-charcoal-border text-charcoal hover:border-sage-300'

@@ -177,6 +177,97 @@ using (true)
 with check (true);
 
 -- ==============================================================================
+-- NOTIFICATIONS
+-- Audit trail for the scheduled reminders / follow-ups workflow. Every attempt
+-- is recorded, including the ones that could NOT be delivered, so those become
+-- a manual worklist rather than a silent failure.
+--   sent           - the Instagram DM went out
+--   skipped_window - outside Meta's 24h messaging window, or no numeric IGSID
+--   failed         - Instagram rejected the send
+-- ==============================================================================
+create type notification_type as enum ('booking_reminder','post_service_followup');
+create type notification_status as enum ('sent','skipped_window','failed');
+
+create table if not exists notifications (
+  id uuid primary key default gen_random_uuid(),
+  booking_id uuid references bookings (id) on delete cascade,
+  instagram_user_id text,
+  type notification_type not null,
+  channel text not null default 'instagram_dm',
+  status notification_status not null default 'sent',
+  message text,
+  error text,                              -- rejection reason, or why it was skipped
+  hours_since_last_message numeric,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists notifications_booking_type_idx on notifications (booking_id, type);
+create index if not exists notifications_created_at_idx on notifications (created_at desc);
+
+-- Only ONE successful send per booking per type. skipped/failed rows may repeat
+-- so a later run can retry once the customer re-opens the messaging window.
+create unique index if not exists notifications_sent_once
+  on notifications (booking_id, type) where status = 'sent';
+
+alter table notifications enable row level security;
+
+create policy "Authenticated users full access"
+on notifications for all
+to authenticated
+using (true)
+with check (true);
+
+-- Everything due to send right now, already de-duplicated against notifications,
+-- with hours since the customer's last inbound DM so the workflow can tell
+-- whether Instagram's 24h messaging window is still open.
+-- Source: supabase migration add_notifications_table_and_due_queue.
+create or replace function get_due_notifications()
+returns table (
+  booking_id uuid, notification_type text, instagram_user_id text,
+  instagram_username text, customer_name text, booking_date date,
+  booking_time time, address text, service text, car_count integer,
+  has_power boolean, has_water boolean, price numeric,
+  last_message_at timestamptz, hours_since_last_message numeric
+)
+language sql stable security definer set search_path = public
+as $$
+  with candidates as (
+    select b.id as booking_id, 'booking_reminder'::text as notification_type,
+           b.instagram_user_id, b.instagram_username, b.customer_name,
+           b.booking_date, b.booking_time, b.address, b.service::text as service,
+           b.car_count, b.has_power, b.has_water, b.price
+    from bookings b
+    where b.status = 'scheduled'
+      and b.booking_date = current_date + 1
+      and coalesce(b.instagram_user_id, '') <> ''
+    union all
+    select b.id, 'post_service_followup'::text,
+           b.instagram_user_id, b.instagram_username, b.customer_name,
+           b.booking_date, b.booking_time, b.address, b.service::text,
+           b.car_count, b.has_power, b.has_water, b.price
+    from bookings b
+    where b.status = 'completed'
+      and b.booking_date between current_date - 3 and current_date - 1
+      and coalesce(b.instagram_user_id, '') <> ''
+  )
+  select c.booking_id, c.notification_type, c.instagram_user_id, c.instagram_username,
+         c.customer_name, c.booking_date, c.booking_time, c.address, c.service,
+         c.car_count, c.has_power, c.has_water, c.price,
+         l.last_message_at,
+         case when l.last_message_at is null then null
+              else round(extract(epoch from (now() - l.last_message_at)) / 3600.0, 2)
+         end as hours_since_last_message
+  from candidates c
+  left join leads l on l.instagram_user_id = c.instagram_user_id
+  where not exists (
+    select 1 from notifications n
+    where n.booking_id = c.booking_id
+      and n.type::text = c.notification_type
+      and n.status = 'sent'
+  );
+$$;
+
+-- ==============================================================================
 -- REALTIME
 -- Both tables must belong to the supabase_realtime publication or the app's
 -- postgres_changes subscriptions ("Live Sync") receive no events at all.

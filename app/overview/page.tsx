@@ -32,6 +32,7 @@ import {
   ArrowDownRight,
   X,
   Instagram,
+  Mail,
 } from 'lucide-react';
 
 type TimeframePreset =
@@ -150,6 +151,21 @@ function InstagramTag({ booking }: { booking: Booking }) {
     >
       <Instagram className="w-2.5 h-2.5 shrink-0 text-pink-600" />
       <span>@{ig.handle}</span>
+    </a>
+  );
+}
+
+/** Contact email link. Renders nothing when the optional field is empty. */
+function EmailTag({ booking }: { booking: Booking }) {
+  if (!booking.email) return null;
+  return (
+    <a
+      href={`mailto:${booking.email}`}
+      className="inline-flex items-center gap-1 text-[11px] text-sky-700 hover:text-sky-900 font-medium truncate max-w-[160px]"
+      title={`Email: ${booking.email}`}
+    >
+      <Mail className="w-2.5 h-2.5 shrink-0 text-sky-600" />
+      <span>{booking.email}</span>
     </a>
   );
 }
@@ -596,9 +612,10 @@ export default function OverviewPage() {
           const matchInstagram =
             b.instagram_user_id?.toLowerCase().includes(q) ||
             b.instagram_username?.toLowerCase().includes(q);
+          const matchEmail = b.email?.toLowerCase().includes(q);
           const matchDetailer = b.assigned_detailer?.toLowerCase().includes(q);
           const matchService = (SERVICE_LABELS[b.service] || b.service)?.toLowerCase().includes(q);
-          return matchName || matchAddress || matchPhone || matchInstagram || matchDetailer || matchService;
+          return matchName || matchAddress || matchPhone || matchInstagram || matchEmail || matchDetailer || matchService;
         }
         return true;
       })
@@ -1391,7 +1408,7 @@ export default function OverviewPage() {
               <Search className="w-3.5 h-3.5 text-charcoal-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
-                placeholder="Search name, phone, detailer..."
+                placeholder="Search name, phone, email, detailer..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-8 pr-3 py-2.5 sm:py-1.5 rounded-xl text-base sm:text-xs bg-canvas border border-charcoal-border focus:bg-charcoal-card focus:border-sage-500 text-charcoal w-full sm:w-56"
@@ -1530,6 +1547,7 @@ export default function OverviewPage() {
                     </a>
                   )}
                   <InstagramTag booking={booking} />
+                  <EmailTag booking={booking} />
                 </div>
 
                 {booking.address && (
@@ -1587,6 +1605,7 @@ export default function OverviewPage() {
                           </a>
                         )}
                         <InstagramTag booking={booking} />
+                        <EmailTag booking={booking} />
                       </div>
                       <div className="text-[10px] text-charcoal-muted truncate max-w-[160px] mt-0.5" title={booking.address}>
                         {booking.address}

@@ -7,6 +7,7 @@
 alter table bookings add column if not exists number text;
 alter table bookings add column if not exists client_no text;
 alter table bookings add column if not exists instagram_user_id text;
+alter table bookings add column if not exists email text;
 alter table bookings add column if not exists car_count integer not null default 1;
 alter table bookings add column if not exists assigned_detailer text default 'Unassigned';
 
@@ -64,7 +65,7 @@ create table if not exists bookings (
   client_no text,                        -- Client No. column
   instagram_user_id text,                -- Instagram account ID from the automation
   instagram_username text,               -- Instagram @handle
-  email text,
+  email text,                            -- Optional contact email (suggested, never required)
   car_count integer not null default 1,  -- Dedicated vehicle count column
   vehicle_make_model text,
   assigned_detailer text default 'Unassigned', -- Dedicated detailer assignment column

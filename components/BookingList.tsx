@@ -30,6 +30,7 @@ import {
   X,
   Loader2,
   Instagram,
+  Mail,
 } from 'lucide-react';
 
 interface BookingListProps {
@@ -364,6 +365,18 @@ export default function BookingList({
                           </a>
                         );
                       })()}
+
+                      {/* Contact email (optional field) */}
+                      {booking.email && (
+                        <a
+                          href={`mailto:${booking.email}`}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-sky-50 text-sky-800 hover:bg-sky-100 border border-sky-200/70 transition-colors active:scale-95"
+                          title={`Email client: ${booking.email}`}
+                        >
+                          <Mail className="w-3.5 h-3.5 text-sky-600 shrink-0" />
+                          <span className="truncate max-w-[180px]">{booking.email}</span>
+                        </a>
+                      )}
 
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sage-50 text-sage-800 border border-sage-200">
                         {SERVICE_LABELS[booking.service] || booking.service}

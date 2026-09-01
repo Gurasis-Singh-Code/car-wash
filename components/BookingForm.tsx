@@ -26,6 +26,7 @@ import {
   UserCheck,
   Hash,
   Instagram,
+  Mail,
 } from 'lucide-react';
 
 export type BookingFormData = Omit<Booking, 'id' | 'status'> & { status?: BookingStatus };
@@ -78,6 +79,7 @@ export default function BookingForm({
   const [instagramUsername, setInstagramUsername] = useState(
     resolveInstagram(initialData?.instagram_user_id, initialData?.instagram_username)?.handle || ''
   );
+  const [email, setEmail] = useState(initialData?.email || '');
   const [carCount, setCarCount] = useState<number>(initialData?.car_count || 1);
   const [assignedDetailer, setAssignedDetailer] = useState(
     initialData?.assigned_detailer === 'Unassigned' ? '' : (initialData?.assigned_detailer || '')
@@ -102,6 +104,7 @@ export default function BookingForm({
       setInstagramUsername(
         resolveInstagram(initialData.instagram_user_id, initialData.instagram_username)?.handle || ''
       );
+      setEmail(initialData.email || '');
       setCarCount(initialData.car_count || 1);
       setAssignedDetailer(
         initialData.assigned_detailer === 'Unassigned' ? '' : (initialData.assigned_detailer || '')
@@ -142,6 +145,12 @@ export default function BookingForm({
       newErrors.car_count = 'Must specify at least 1 vehicle';
     }
 
+    // Email is optional. Only validate the format when something was typed,
+    // so leaving it blank can never block a booking.
+    if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim())) {
+      newErrors.email = 'Enter a valid email address, or leave it blank';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -162,6 +171,7 @@ export default function BookingForm({
       client_no: phoneVal,
       // Sent even when blank so clearing the field actually clears the column.
       instagram_username: instagramUsername.trim().replace(/^@/, ''),
+      email: email.trim(),
       car_count: Number(carCount) || 1,
       assigned_detailer: assignedDetailer.trim() || 'Unassigned',
       service,
@@ -194,6 +204,7 @@ export default function BookingForm({
         setCustomerName('');
         setClientNo('');
         setInstagramUsername('');
+        setEmail('');
         setCarCount(1);
         setAssignedDetailer('');
         setAddress('');
@@ -312,7 +323,51 @@ export default function BookingForm({
           </div>
         </div>
 
-        {/* Row 2: Instagram User ID & Assigned Detailer */}
+        {/* Row 2: Email (optional but suggested) */}
+        <div>
+          <label
+            htmlFor="email"
+            className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-charcoal mb-1.5"
+          >
+            <span>Email Address</span>
+            <span className="normal-case tracking-normal font-medium px-1.5 py-0.5 rounded-full text-[10px] bg-sage-100 text-sage-800 border border-sage-200">
+              Optional &mdash; suggested
+            </span>
+          </label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-charcoal-muted">
+              <Mail className="w-4 h-4 text-sage-600" />
+            </div>
+            <input
+              id="email"
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (errors.email) setErrors((prev) => ({ ...prev, email: '' }));
+              }}
+              placeholder="e.g. sarah@example.com"
+              className={`w-full pl-10 pr-3.5 py-2.5 rounded-xl text-base sm:text-sm bg-canvas border ${
+                errors.email
+                  ? 'border-red-400 focus:border-red-500'
+                  : 'border-charcoal-border focus:border-sage-500'
+              } text-charcoal placeholder:text-charcoal-light/70 focus:bg-charcoal-card transition-colors`}
+            />
+          </div>
+          {errors.email ? (
+            <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+              <AlertCircle className="w-3 h-3" /> {errors.email}
+            </p>
+          ) : (
+            <p className="mt-1 text-[11px] text-charcoal-muted">
+              Used for booking confirmations and receipts. Leave blank if the customer prefers not to share it.
+            </p>
+          )}
+        </div>
+
+        {/* Row 3: Instagram User ID & Assigned Detailer */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5">
           {/* Instagram Username / Handle */}
           <div>

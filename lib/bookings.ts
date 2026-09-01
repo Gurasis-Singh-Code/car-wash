@@ -26,6 +26,7 @@ function decodeBookingFromDb(row: any): Booking {
   const phone = row.number || row.client_no || legacyMeta.number || legacyMeta.client_no || undefined;
   const instagram_user_id = row.instagram_user_id || legacyMeta.instagram_user_id || undefined;
   const instagram_username = row.instagram_username || undefined;
+  const email = row.email || undefined;
   const car_count = row.car_count ?? legacyMeta.car_count ?? 1;
   const assigned_detailer = row.assigned_detailer || legacyMeta.assigned_detailer || 'Unassigned';
 
@@ -36,6 +37,7 @@ function decodeBookingFromDb(row: any): Booking {
     client_no: phone,
     instagram_user_id,
     instagram_username,
+    email,
     car_count,
     assigned_detailer,
     service: row.service,
@@ -157,6 +159,7 @@ export async function addBooking(
   const phone = data.number?.trim() || data.client_no?.trim() || null;
   const instagramUserId = data.instagram_user_id?.trim() || null;
   const instagramUsername = data.instagram_username?.trim().replace(/^@/, '') || null;
+  const emailValue = data.email?.trim() || null;
   const carCount = Number(data.car_count) || 1;
   const assignedDetailer = data.assigned_detailer?.trim() || 'Unassigned';
   const cleanAddress = (data.address || '').replace(/\n?<!--meta:[\s\S]*?-->/g, '').trim();
@@ -167,6 +170,7 @@ export async function addBooking(
     client_no: phone,
     instagram_user_id: instagramUserId,
     instagram_username: instagramUsername,
+    email: emailValue,
     car_count: carCount,
     assigned_detailer: assignedDetailer,
     service: normalizeService(data.service) || 'interior_silver',
@@ -215,6 +219,8 @@ export async function updateBooking(
     data.instagram_username !== undefined
       ? (data.instagram_username?.trim().replace(/^@/, '') || null)
       : undefined;
+  const emailValue =
+    data.email !== undefined ? (data.email?.trim() || null) : undefined;
   const carCount = data.car_count !== undefined ? (Number(data.car_count) || 1) : undefined;
   const assignedDetailer =
     data.assigned_detailer !== undefined ? (data.assigned_detailer?.trim() || 'Unassigned') : undefined;
@@ -228,6 +234,7 @@ export async function updateBooking(
     ...(phone !== undefined ? { number: phone, client_no: phone } : {}),
     ...(instagramUserId !== undefined ? { instagram_user_id: instagramUserId } : {}),
     ...(instagramUsername !== undefined ? { instagram_username: instagramUsername } : {}),
+    ...(emailValue !== undefined ? { email: emailValue } : {}),
     ...(carCount !== undefined ? { car_count: carCount } : {}),
     ...(assignedDetailer !== undefined ? { assigned_detailer: assignedDetailer } : {}),
     ...(data.service ? { service: normalizeService(data.service) } : {}),

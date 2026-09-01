@@ -17,6 +17,8 @@ export interface Booking {
   instagram_user_id?: string;
   /** Public Instagram @handle (stored without the leading "@"). */
   instagram_username?: string;
+  /** Contact email. Suggested when booking, but never required. */
+  email?: string;
   car_count?: number;
   assigned_detailer?: string;
   service: ServiceType;

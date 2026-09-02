@@ -185,12 +185,15 @@ with check (true);
 --   skipped_window - outside Meta's 24h messaging window, or no numeric IGSID
 --   failed         - Instagram rejected the send
 -- ==============================================================================
-create type notification_type as enum ('booking_reminder','post_service_followup');
-create type notification_status as enum ('sent','skipped_window','failed');
+create type notification_type as enum ('booking_reminder','post_service_followup','lead_followup');
+create type notification_status as enum ('sent','skipped_window','failed','skipped');
 
+-- Exactly one of booking_id / lead_id is set: booking reminders and post-service
+-- asks point at a booking, AI lead follow-ups point at a lead.
 create table if not exists notifications (
   id uuid primary key default gen_random_uuid(),
   booking_id uuid references bookings (id) on delete cascade,
+  lead_id uuid references leads (id) on delete cascade,
   instagram_user_id text,
   type notification_type not null,
   channel text not null default 'instagram_dm',
@@ -202,6 +205,7 @@ create table if not exists notifications (
 );
 
 create index if not exists notifications_booking_type_idx on notifications (booking_id, type);
+create index if not exists notifications_lead_type_idx on notifications (lead_id, type);
 create index if not exists notifications_created_at_idx on notifications (created_at desc);
 
 -- Only ONE successful send per booking per type. skipped/failed rows may repeat
@@ -265,6 +269,71 @@ as $$
       and n.type::text = c.notification_type
       and n.status = 'sent'
   );
+$$;
+
+-- ==============================================================================
+-- LEAD FOLLOW-UPS
+-- Backs the "Absolute AI lead follow-ups" n8n workflow. Follow-ups are logged in
+-- the same notifications table as booking reminders, but point at a lead rather
+-- than a booking, so notifications.lead_id is nullable alongside booking_id.
+--
+-- Statuses used here:
+--   sent    - the AI-written DM was delivered
+--   failed  - Instagram rejected it (often a missing HUMAN_AGENT permission)
+--   skipped - deliberately not sent. The reason is in the error column, and
+--             covers all of: dry run held it back, the assistant judged the
+--             lead should not be chased, a guard blocked the wording, or the
+--             lead is past the 7 day window Instagram allows.
+-- ==============================================================================
+
+-- Cold leads that are due a follow-up. Excludes anyone converted or lost,
+-- anyone who already has a booking, anyone without a real numeric Instagram
+-- ID, anyone followed up too many times, and anyone followed up too recently.
+-- Only status = 'sent' counts toward the caps, so a skipped draft never burns
+-- a lead's follow-up allowance. Ordered coldest-first.
+-- Source: supabase migration add_lead_followup_queue.
+create or replace function get_followup_leads(
+  min_hours_quiet integer default 48,
+  max_days_quiet integer default 30,
+  max_followups integer default 2,
+  min_days_between integer default 4
+)
+returns table (
+  lead_id uuid, instagram_user_id text, instagram_username text,
+  customer_name text, lead_status text, service text, car_type text,
+  car_count integer, vehicle_make_model text, address text,
+  booking_date date, booking_time time, price numeric, notes text,
+  last_message text, message_count integer, hours_quiet numeric,
+  days_quiet numeric, followups_sent bigint, last_followup_at timestamptz
+)
+language sql stable security definer set search_path = public
+as $$
+  with stats as (
+    select n.lead_id,
+           count(*) filter (where n.status = 'sent') as sent_count,
+           max(n.created_at) filter (where n.status = 'sent') as last_sent
+    from notifications n
+    where n.lead_id is not null
+      and n.type::text = 'lead_followup'
+    group by n.lead_id
+  )
+  select l.id, l.instagram_user_id, l.instagram_username, l.customer_name,
+         l.lead_status::text, l.service::text, l.car_type::text, l.car_count,
+         l.vehicle_make_model, l.address, l.booking_date, l.booking_time,
+         l.price, l.notes, l.last_message, l.message_count,
+         round(extract(epoch from (now() - l.last_message_at)) / 3600.0, 2),
+         round(extract(epoch from (now() - l.last_message_at)) / 86400.0, 2),
+         coalesce(s.sent_count, 0), s.last_sent
+  from leads l
+  left join stats s on s.lead_id = l.id
+  where l.lead_status in ('new', 'in_progress', 'details_collected', 'confirmed')
+    and l.booking_id is null
+    and l.instagram_user_id ~ '^[0-9]{6,}$'
+    and l.last_message_at <= now() - make_interval(hours => min_hours_quiet)
+    and l.last_message_at >= now() - make_interval(days => max_days_quiet)
+    and coalesce(s.sent_count, 0) < max_followups
+    and (s.last_sent is null or s.last_sent <= now() - make_interval(days => min_days_between))
+  order by l.last_message_at asc;
 $$;
 
 -- ==============================================================================

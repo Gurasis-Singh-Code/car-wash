@@ -14,6 +14,7 @@ import { getLeads, updateLeadStatus, deleteLead, subscribeToLeads } from '@/lib/
 import { resolveInstagram } from '@/lib/instagram';
 import { useAuth } from '@/components/AuthProvider';
 import ConfirmModal from '@/components/ConfirmModal';
+import FollowUpModal, { FollowUpDraft, FollowUpStatus } from '@/components/FollowUpModal';
 import {
   Sparkles,
   RefreshCw,
@@ -107,7 +108,7 @@ function leadDisplayName(lead: Lead): string {
 
 
 export default function LeadsPage() {
-  const { isConfigured } = useAuth();
+  const { isConfigured, session } = useAuth();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -116,6 +117,12 @@ export default function LeadsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [deletingLead, setDeletingLead] = useState<Lead | null>(null);
+
+  const [followUpLead, setFollowUpLead] = useState<Lead | null>(null);
+  const [followUpStatus, setFollowUpStatus] = useState<FollowUpStatus>('loading');
+  const [followUpDraft, setFollowUpDraft] = useState<FollowUpDraft | null>(null);
+  const [followUpError, setFollowUpError] = useState<string | null>(null);
+  const [followUpMessage, setFollowUpMessage] = useState('');
 
   const loadLeads = useCallback(async () => {
     try {
@@ -238,6 +245,76 @@ export default function LeadsPage() {
       setLeads(previousLeads); // Rollback
       setError(err?.message || 'Failed to delete lead on Supabase.');
     }
+  };
+
+  /**
+   * Calls the server route, which holds the n8n secret. Returns the parsed body
+   * and throws with the server's own wording on failure, so the modal can show
+   * the real reason rather than a generic message.
+   */
+  const callFollowUp = async (leadId: string, mode: 'draft' | 'send', message?: string) => {
+    const token = session?.access_token;
+    if (!token) {
+      throw new Error('Your session has expired. Please sign in again.');
+    }
+
+    const res = await fetch('/api/leads/followup', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ leadId, mode, message: message ?? '' }),
+    });
+
+    const payload = await res.json().catch(() => null);
+    if (!res.ok || payload?.ok === false) {
+      throw new Error(payload?.error || 'The follow-up could not be completed.');
+    }
+    return payload;
+  };
+
+  const handleOpenFollowUp = async (lead: Lead) => {
+    setFollowUpLead(lead);
+    setFollowUpStatus('loading');
+    setFollowUpDraft(null);
+    setFollowUpError(null);
+    setFollowUpMessage('');
+
+    try {
+      const draft = await callFollowUp(lead.id, 'draft');
+      setFollowUpDraft(draft as FollowUpDraft);
+      setFollowUpMessage(draft?.message || '');
+      setFollowUpStatus('ready');
+    } catch (err: any) {
+      console.error('[handleOpenFollowUp error]:', err);
+      setFollowUpError(err?.message || 'Could not write a follow-up for this lead.');
+      setFollowUpStatus('error');
+    }
+  };
+
+  const handleSendFollowUp = async () => {
+    if (!followUpLead) return;
+
+    setFollowUpStatus('sending');
+    setFollowUpError(null);
+
+    try {
+      await callFollowUp(followUpLead.id, 'send', followUpMessage);
+      setFollowUpStatus('sent');
+    } catch (err: any) {
+      console.error('[handleSendFollowUp error]:', err);
+      setFollowUpError(err?.message || 'The message could not be sent.');
+      setFollowUpStatus('error');
+    }
+  };
+
+  const handleCloseFollowUp = () => {
+    if (followUpStatus === 'sending') return;
+    setFollowUpLead(null);
+    setFollowUpDraft(null);
+    setFollowUpError(null);
+    setFollowUpMessage('');
   };
 
   return (
@@ -766,6 +843,24 @@ export default function LeadsPage() {
 
                     <button
                       type="button"
+                      onClick={() => handleOpenFollowUp(lead)}
+                      disabled={lead.lead_status === 'converted' || lead.lead_status === 'lost'}
+                      className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-sage-800 bg-sage-100 hover:bg-sage-200 active:scale-95 rounded-lg border border-sage-300/70 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
+                      title={
+                        lead.lead_status === 'converted'
+                          ? 'This lead already became a booking'
+                          : lead.lead_status === 'lost'
+                            ? 'This lead is marked lost'
+                            : 'Draft a follow-up message for this lead'
+                      }
+                      aria-label={`Follow up with ${leadDisplayName(lead)}`}
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Follow up</span>
+                    </button>
+
+                    <button
+                      type="button"
                       onClick={() => setDeletingLead(lead)}
                       className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 active:scale-95 rounded-lg border border-red-200/60 transition-all"
                       aria-label={`Delete lead ${leadDisplayName(lead)}`}
@@ -793,6 +888,19 @@ export default function LeadsPage() {
         isDestructive={true}
         onConfirm={handleConfirmDelete}
         onCancel={() => setDeletingLead(null)}
+      />
+
+      {/* AI Follow-up: draft, review, then send */}
+      <FollowUpModal
+        isOpen={Boolean(followUpLead)}
+        leadName={followUpLead ? leadDisplayName(followUpLead) : ''}
+        status={followUpStatus}
+        draft={followUpDraft}
+        error={followUpError}
+        message={followUpMessage}
+        onMessageChange={setFollowUpMessage}
+        onSend={handleSendFollowUp}
+        onClose={handleCloseFollowUp}
       />
     </div>
   );

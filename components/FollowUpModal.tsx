@@ -45,10 +45,16 @@ export default function FollowUpModal({
 
   const isBusy = status === 'loading' || status === 'sending';
 
-  // The assistant declining to write is a normal, useful outcome rather than a
-  // failure, so it gets an explanation and an explicit override instead of a block.
-  const notRecommended = status !== 'loading' && draft !== null && !draft.recommended;
+  // Three different reasons there may be no message, which must not look alike.
+  // A model outage or a tripped guard is a technical failure; the assistant
+  // judging that a lead should be left alone is a deliberate, useful call; and
+  // an expired messaging window is neither. Showing an outage as "not
+  // recommended" would read as advice about the customer, which it is not.
+  const failedToDraft = status !== 'loading' && draft !== null && draft.blocked;
+  const notRecommended =
+    status !== 'loading' && draft !== null && !draft.recommended && !draft.blocked;
   const undeliverable = status !== 'loading' && draft !== null && !draft.deliverable;
+  const noDraft = failedToDraft || notRecommended;
 
   const canSend =
     (status === 'ready' || status === 'sending') &&
@@ -134,6 +140,22 @@ export default function FollowUpModal({
               </div>
             )}
 
+            {!undeliverable && failedToDraft && (
+              <div className="rounded-xl border border-red-200/70 bg-red-50 p-3.5 mb-4">
+                <div className="flex items-start gap-2.5">
+                  <AlertTriangle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-xs font-bold text-red-900 mb-1">Could not write a draft</p>
+                    <p className="text-xs sm:text-sm text-red-800 leading-relaxed">{draft.reason}</p>
+                    <p className="text-[11px] text-red-700/90 mt-2">
+                      This is a problem on our side, not a judgement about this lead. Try again in a
+                      moment, or write your own message below.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {!undeliverable && notRecommended && (
               <div className="rounded-xl border border-amber-200/70 bg-amber-50 p-3.5 mb-4">
                 <div className="flex items-start gap-2.5">
@@ -149,7 +171,7 @@ export default function FollowUpModal({
               </div>
             )}
 
-            {!undeliverable && !notRecommended && draft.reason && (
+            {!undeliverable && !noDraft && draft.reason && (
               <div className="rounded-xl border border-sage-300/60 bg-sage-50/70 p-3 mb-4">
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-sage-800 mb-1">
                   Why this message
@@ -182,7 +204,7 @@ export default function FollowUpModal({
                   disabled={status === 'sending'}
                   rows={5}
                   placeholder={
-                    notRecommended
+                    noDraft
                       ? 'Write your own message to send anyway…'
                       : 'The message that will be sent…'
                   }

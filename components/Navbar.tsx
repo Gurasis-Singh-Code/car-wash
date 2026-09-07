@@ -5,10 +5,22 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
 import ThemeToggle from '@/components/ThemeToggle';
-import { Sparkles, Calendar, BarChart3, Settings, LogOut, LogIn, Inbox } from 'lucide-react';
+import {
+  Sparkles,
+  Calendar,
+  BarChart3,
+  Settings,
+  LogOut,
+  LogIn,
+  Inbox,
+  Truck,
+  Store,
+} from 'lucide-react';
 
 const NAV_ITEMS = [
   { href: '/', label: 'Dashboard', icon: Calendar, title: 'Dashboard' },
+  { href: '/mobile', label: 'Mobile', icon: Truck, title: 'Mobile Bookings' },
+  { href: '/shop', label: 'Shop', icon: Store, title: 'Shop Bookings' },
   { href: '/leads', label: 'Leads', icon: Inbox, title: 'Inbound Leads' },
   { href: '/overview', label: 'Overview', icon: BarChart3, title: 'Performance Overview' },
   { href: '/admin', label: 'Admin', icon: Settings, title: 'Admin Management' },

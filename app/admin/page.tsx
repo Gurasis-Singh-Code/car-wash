@@ -144,7 +144,7 @@ export default function AdminPage() {
             </span>
           </div>
           <p className="text-xs sm:text-sm text-charcoal-muted mt-0.5 sm:mt-1">
-            Create new mobile detailing bookings and manage the full appointment registry.
+            Create bookings for either service location and manage the full appointment registry.
           </p>
         </div>
 
@@ -198,6 +198,7 @@ export default function AdminPage() {
             subtitle="Full appointment directory with quick status toggles and controls"
             emptyMessage="No bookings scheduled yet"
             showActions={true}
+            showLocationFilter={true}
             showStatusFilter={true}
             onStatusChange={handleStatusChange}
             onEdit={handleEditClick}

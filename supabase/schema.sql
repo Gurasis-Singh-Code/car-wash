@@ -53,7 +53,27 @@ create extension if not exists pgcrypto;
 
 -- Custom Enums
 create type car_type as enum ('sedan','hatchback','suv','van','mini_truck','other');
-create type service_type as enum ('interior_silver','interior_gold','full_silver','full_gold');
+-- Tinting is sold alongside the detailing packages and is deliberately NOT
+-- offered by the Instagram automations - their prompts list only the four
+-- detailing packages - so it is dashboard-entered. Tint bookings get a distinct
+-- card colour in the panel.
+--
+-- Sedan / SUV is NOT encoded in the service: vehicle type lives in car_type,
+-- exactly as full_gold already spans sedan, suv, van, hatchback and mini_truck.
+--
+-- 'tint' is retired in favour of the two specific products and is excluded from
+-- BOOKABLE_SERVICES in types/booking.ts, but the value stays so the bookings
+-- already using it keep rendering.
+create type service_type as enum (
+  'interior_silver','interior_gold','full_silver','full_gold',
+  'tint','ceramic_tint','nano_ceramic_tint'
+);
+
+-- Which channel a booking runs through. Distinct from bookings.source, which
+-- records how it was ACQUIRED (manual vs instagram_dm). Every booking predating
+-- the shop is 'mobile', which is accurate for a mobile detailing business and
+-- keeps the two channel pages exhaustive - no booking belongs to neither.
+create type service_location as enum ('mobile','shop');
 create type booking_status as enum ('scheduled','completed','cancelled');
 create type lead_status as enum ('new','in_progress','details_collected','confirmed','converted','lost');
 
@@ -70,6 +90,7 @@ create table if not exists bookings (
   vehicle_make_model text,
   assigned_detailer text default 'Unassigned', -- Dedicated detailer assignment column
   service service_type not null,
+  service_location service_location not null default 'mobile', -- mobile visit vs in-shop job
   price numeric,                         -- Quoted price for the job
   pet_hair boolean not null default false,
   address text not null,                 -- Clean physical service address only
@@ -88,6 +109,7 @@ create table if not exists bookings (
 -- Performance Indexes
 create index if not exists idx_bookings_date on bookings (booking_date, booking_time);
 create index if not exists idx_bookings_status on bookings (status);
+create index if not exists bookings_service_location_idx on bookings (service_location);
 create index if not exists idx_bookings_instagram on bookings (instagram_user_id);
 create index if not exists idx_bookings_number on bookings (number);
 create index if not exists idx_bookings_assigned_detailer on bookings (assigned_detailer);

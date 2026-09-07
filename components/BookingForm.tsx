@@ -5,10 +5,13 @@ import {
   Booking,
   CarType,
   ServiceType,
+  ServiceLocation,
   BookingStatus,
   SERVICE_LABELS,
   CAR_TYPE_LABELS,
   STATUS_LABELS,
+  BOOKABLE_SERVICES,
+  SERVICE_LOCATION_LABELS,
 } from '@/types/booking';
 import { resolveInstagram } from '@/lib/instagram';
 import {
@@ -36,6 +39,12 @@ interface BookingFormProps {
   initialData?: Partial<Booking>;
   submitButtonLabel?: string;
   isEditing?: boolean;
+  /**
+   * Initial value for the Service Location field on a NEW booking, so arriving
+   * from the Mobile or Shop page pre-selects that channel. The field stays
+   * editable; when editing, the booking's own value wins.
+   */
+  serviceLocation?: ServiceLocation;
 }
 
 // 9:00 AM to 7:00 PM with 30-minute intervals
@@ -68,6 +77,7 @@ export default function BookingForm({
   initialData,
   submitButtonLabel = 'Create Booking',
   isEditing = false,
+  serviceLocation,
 }: BookingFormProps) {
   // Get today in YYYY-MM-DD format for min date validation
   const todayDateString = new Date().toISOString().split('T')[0];
@@ -85,6 +95,15 @@ export default function BookingForm({
     initialData?.assigned_detailer === 'Unassigned' ? '' : (initialData?.assigned_detailer || '')
   );
   const [service, setService] = useState<ServiceType>(initialData?.service || 'interior_silver');
+
+  // A booking made before a service was retired keeps that value in the list, so
+  // opening it for edit cannot silently switch it to a different service.
+  const serviceOptions: ServiceType[] = BOOKABLE_SERVICES.includes(service)
+    ? BOOKABLE_SERVICES
+    : [service, ...BOOKABLE_SERVICES];
+  const [location, setLocation] = useState<ServiceLocation>(
+    initialData?.service_location || serviceLocation || 'mobile'
+  );
   const [status, setStatus] = useState<BookingStatus>(initialData?.status || 'scheduled');
   const [address, setAddress] = useState(initialData?.address || '');
   const [bookingDate, setBookingDate] = useState(initialData?.booking_date || todayDateString);
@@ -110,6 +129,7 @@ export default function BookingForm({
         initialData.assigned_detailer === 'Unassigned' ? '' : (initialData.assigned_detailer || '')
       );
       setService(initialData.service || 'interior_silver');
+      setLocation(initialData.service_location || 'mobile');
       setStatus(initialData.status || 'scheduled');
       setAddress(initialData.address || '');
       setBookingDate(initialData.booking_date || todayDateString);
@@ -175,6 +195,7 @@ export default function BookingForm({
       car_count: Number(carCount) || 1,
       assigned_detailer: assignedDetailer.trim() || 'Unassigned',
       service,
+      service_location: location,
       status: isEditing ? status : undefined,
       address: address.trim(),
       booking_date: bookingDate,
@@ -432,10 +453,11 @@ export default function BookingForm({
               onChange={(e) => setService(e.target.value as ServiceType)}
               className="w-full px-3.5 py-2.5 rounded-xl text-base sm:text-sm bg-canvas border border-charcoal-border text-charcoal focus:border-sage-500 focus:bg-charcoal-card transition-colors cursor-pointer"
             >
-              <option value="interior_silver">{SERVICE_LABELS.interior_silver}</option>
-              <option value="interior_gold">{SERVICE_LABELS.interior_gold}</option>
-              <option value="full_silver">{SERVICE_LABELS.full_silver}</option>
-              <option value="full_gold">{SERVICE_LABELS.full_gold}</option>
+              {serviceOptions.map((value) => (
+                <option key={value} value={value}>
+                  {SERVICE_LABELS[value] || value}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -504,6 +526,30 @@ export default function BookingForm({
                 <AlertCircle className="w-3 h-3" /> {errors.car_count}
               </p>
             )}
+          </div>
+
+          {/* Service Location: which channel the job runs through */}
+          <div>
+            <label
+              htmlFor="service_location"
+              className="block text-xs font-semibold uppercase tracking-wider text-charcoal mb-1.5"
+            >
+              Service Location <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-charcoal-muted">
+                <MapPin className="w-4 h-4 text-sage-600" />
+              </div>
+              <select
+                id="service_location"
+                value={location}
+                onChange={(e) => setLocation(e.target.value as ServiceLocation)}
+                className="w-full pl-10 pr-3.5 py-2.5 rounded-xl text-base sm:text-sm bg-canvas border border-charcoal-border text-charcoal focus:border-sage-500 focus:bg-charcoal-card transition-colors cursor-pointer"
+              >
+                <option value="mobile">{SERVICE_LOCATION_LABELS.mobile}</option>
+                <option value="shop">{SERVICE_LOCATION_LABELS.shop}</option>
+              </select>
+            </div>
           </div>
         </div>
 

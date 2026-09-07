@@ -7,6 +7,8 @@ import {
   BookingStatus,
   SERVICE_LABELS,
   CAR_TYPE_LABELS,
+  serviceCardAccent,
+  serviceRowAccent,
 } from '@/types/booking';
 import { getBookings, subscribeToBookings } from '@/lib/bookings';
 import { resolveInstagram } from '@/lib/instagram';
@@ -1489,7 +1491,10 @@ export default function OverviewPage() {
             {filteredTableBookings.map((booking) => (
               <div
                 key={booking.id}
-                className="rounded-xl border border-charcoal-border/60 bg-canvas p-3 space-y-2"
+                className={`rounded-xl border p-3 space-y-2 ${serviceCardAccent(
+                  booking.service,
+                  'border-charcoal-border/60 bg-canvas'
+                )}`}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
@@ -1577,7 +1582,7 @@ export default function OverviewPage() {
                 {filteredTableBookings.map((booking) => (
                   <tr
                     key={booking.id}
-                    className="hover:bg-sage-50/40 transition-colors"
+                    className={`transition-colors ${serviceRowAccent(booking.service)}`}
                   >
                     {/* Date & Time */}
                     <td className="py-3 px-3 whitespace-nowrap">

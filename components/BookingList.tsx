@@ -7,6 +7,10 @@ import {
   CAR_TYPE_LABELS,
   STATUS_LABELS,
   BookingStatus,
+  ServiceLocation,
+  SERVICE_LOCATION_LABELS,
+  serviceCardAccent,
+  serviceBadgeAccent,
 } from '@/types/booking';
 import ConfirmModal from './ConfirmModal';
 import { resolveInstagram } from '@/lib/instagram';
@@ -31,6 +35,8 @@ import {
   Loader2,
   Instagram,
   Mail,
+  Truck,
+  Store,
 } from 'lucide-react';
 
 interface BookingListProps {
@@ -40,6 +46,8 @@ interface BookingListProps {
   emptyMessage?: string;
   showActions?: boolean;
   showStatusFilter?: boolean;
+  /** Adds Mobile / Shop channel tabs above the status tabs. */
+  showLocationFilter?: boolean;
   onEdit?: (booking: Booking) => void;
   onDelete?: (id: string) => void;
   onStatusChange?: (id: string, newStatus: BookingStatus) => void | Promise<void>;
@@ -52,37 +60,58 @@ export default function BookingList({
   emptyMessage = 'No bookings scheduled yet',
   showActions = false,
   showStatusFilter = false,
+  showLocationFilter = false,
   onEdit,
   onDelete,
   onStatusChange,
 }: BookingListProps) {
   const [deletingBooking, setDeletingBooking] = useState<Booking | null>(null);
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<BookingStatus | 'all'>('all');
+  const [selectedLocationFilter, setSelectedLocationFilter] = useState<ServiceLocation | 'all'>('all');
   const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
+
+  // Channel scope is applied first, so the status counts below describe the
+  // channel currently being viewed rather than the whole list.
+  const locationScoped = useMemo(
+    () =>
+      selectedLocationFilter === 'all'
+        ? bookings
+        : bookings.filter((b) => (b.service_location || 'mobile') === selectedLocationFilter),
+    [bookings, selectedLocationFilter]
+  );
+
+  const locationCounts = useMemo(() => {
+    const counts = { all: bookings.length, mobile: 0, shop: 0 };
+    bookings.forEach((b) => {
+      if ((b.service_location || 'mobile') === 'shop') counts.shop += 1;
+      else counts.mobile += 1;
+    });
+    return counts;
+  }, [bookings]);
 
   // Status counts for filter tabs
   const statusCounts = useMemo(() => {
     const counts = {
-      all: bookings.length,
+      all: locationScoped.length,
       scheduled: 0,
       completed: 0,
       cancelled: 0,
     };
-    bookings.forEach((b) => {
+    locationScoped.forEach((b) => {
       if (b.status === 'scheduled') counts.scheduled += 1;
       else if (b.status === 'completed') counts.completed += 1;
       else if (b.status === 'cancelled') counts.cancelled += 1;
     });
     return counts;
-  }, [bookings]);
+  }, [locationScoped]);
 
   // Filter bookings based on selected status filter
   const filteredBookings = useMemo(() => {
     if (selectedStatusFilter === 'all') {
-      return bookings;
+      return locationScoped;
     }
-    return bookings.filter((b) => b.status === selectedStatusFilter);
-  }, [bookings, selectedStatusFilter]);
+    return locationScoped.filter((b) => b.status === selectedStatusFilter);
+  }, [locationScoped, selectedStatusFilter]);
 
   // Sort filtered bookings by date and time ascending
   const sortedBookings = useMemo(() => {
@@ -193,6 +222,64 @@ export default function BookingList({
               {filteredBookings.length} of {bookings.length} {bookings.length === 1 ? 'appointment' : 'appointments'}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Channel Filter Tabs (All / Mobile / Shop) */}
+      {showLocationFilter && (
+        <div className="flex items-center gap-1.5 p-1 bg-canvas border border-charcoal-border/70 rounded-2xl overflow-x-auto shadow-soft-xs">
+          <button
+            type="button"
+            onClick={() => setSelectedLocationFilter('all')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+              selectedLocationFilter === 'all'
+                ? 'bg-charcoal-card text-charcoal shadow-soft-xs border border-charcoal-border/80'
+                : 'text-charcoal-muted hover:text-charcoal hover:bg-charcoal-card/60'
+            }`}
+          >
+            <span>All</span>
+            <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+              selectedLocationFilter === 'all' ? 'bg-sage-100 text-sage-800' : 'bg-charcoal-border/40 text-charcoal-muted'
+            }`}>
+              {locationCounts.all}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setSelectedLocationFilter('mobile')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+              selectedLocationFilter === 'mobile'
+                ? 'bg-sage-100 text-sage-900 shadow-soft-xs border border-sage-300'
+                : 'text-charcoal-muted hover:text-sage-800 hover:bg-sage-50/70'
+            }`}
+          >
+            <Truck className="w-3 h-3 text-sage-700" />
+            <span>{SERVICE_LOCATION_LABELS.mobile}</span>
+            <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+              selectedLocationFilter === 'mobile' ? 'bg-sage-200 text-sage-900' : 'bg-charcoal-border/40 text-charcoal-muted'
+            }`}>
+              {locationCounts.mobile}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setSelectedLocationFilter('shop')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+              selectedLocationFilter === 'shop'
+                ? 'bg-sage-100 text-sage-900 shadow-soft-xs border border-sage-300'
+                : 'text-charcoal-muted hover:text-sage-800 hover:bg-sage-50/70'
+            }`}
+          >
+            <Store className="w-3 h-3 text-sage-700" />
+            <span>{SERVICE_LOCATION_LABELS.shop}</span>
+            <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+              selectedLocationFilter === 'shop' ? 'bg-sage-200 text-sage-900' : 'bg-charcoal-border/40 text-charcoal-muted'
+            }`}>
+              {locationCounts.shop}
+            </span>
+          </button>
         </div>
       )}
 
@@ -308,7 +395,9 @@ export default function BookingList({
             return (
               <div
                 key={booking.id}
-                className="bg-charcoal-card rounded-xl p-3.5 sm:p-5 border border-charcoal-border/60 shadow-soft-sm hover:shadow-soft-md hover:border-sage-300/80 transition-all duration-200"
+                className={`rounded-xl p-3.5 sm:p-5 border shadow-soft-sm hover:shadow-soft-md transition-all duration-200 ${serviceCardAccent(
+                  booking.service
+                )}`}
               >
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4">
                   {/* Left & Middle details */}
@@ -378,7 +467,11 @@ export default function BookingList({
                         </a>
                       )}
 
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sage-50 text-sage-800 border border-sage-200">
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${serviceBadgeAccent(
+                          booking.service
+                        )}`}
+                      >
                         {SERVICE_LABELS[booking.service] || booking.service}
                       </span>
 

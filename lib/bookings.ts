@@ -41,6 +41,8 @@ function decodeBookingFromDb(row: any): Booking {
     car_count,
     assigned_detailer,
     service: row.service,
+    // Rows created before the shop channel existed have the column default.
+    service_location: row.service_location || 'mobile',
     address: cleanAddress,
     booking_date: row.booking_date,
     booking_time: row.booking_time,
@@ -174,6 +176,7 @@ export async function addBooking(
     car_count: carCount,
     assigned_detailer: assignedDetailer,
     service: normalizeService(data.service) || 'interior_silver',
+    service_location: data.service_location || 'mobile',
     address: cleanAddress,
     booking_date: data.booking_date,
     booking_time: data.booking_time,
@@ -238,6 +241,9 @@ export async function updateBooking(
     ...(carCount !== undefined ? { car_count: carCount } : {}),
     ...(assignedDetailer !== undefined ? { assigned_detailer: assignedDetailer } : {}),
     ...(data.service ? { service: normalizeService(data.service) } : {}),
+    ...(data.service_location !== undefined
+      ? { service_location: data.service_location }
+      : {}),
     ...(cleanAddress !== undefined ? { address: cleanAddress } : {}),
     ...(data.booking_date !== undefined ? { booking_date: data.booking_date } : {}),
     ...(data.booking_time !== undefined ? { booking_time: data.booking_time } : {}),

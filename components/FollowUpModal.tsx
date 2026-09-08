@@ -223,7 +223,7 @@ export default function FollowUpModal({
             type="button"
             onClick={onClose}
             disabled={status === 'sending'}
-            className="px-4 py-2.5 sm:py-2 text-xs sm:text-sm font-medium text-charcoal-muted hover:text-charcoal bg-sage-50/80 hover:bg-sage-100 rounded-xl transition-colors text-center disabled:opacity-50"
+            className="px-4 py-3.5 sm:py-2 text-xs sm:text-sm font-medium text-charcoal-muted hover:text-charcoal bg-sage-50/80 hover:bg-sage-100 rounded-xl transition-colors text-center disabled:opacity-50"
           >
             {status === 'sent' ? 'Close' : 'Cancel'}
           </button>
@@ -233,7 +233,7 @@ export default function FollowUpModal({
               type="button"
               onClick={onSend}
               disabled={!canSend || isBusy}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 text-xs sm:text-sm font-semibold text-white rounded-xl shadow-soft-sm transition-all bg-sage-500 hover:bg-sage-600 active:scale-98 disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
+              className="inline-flex items-center justify-center gap-2 px-4 py-3.5 sm:py-2 text-xs sm:text-sm font-semibold text-white rounded-xl shadow-soft-sm transition-all bg-sage-500 hover:bg-sage-600 active:scale-98 disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
             >
               {status === 'sending' ? (
                 <>

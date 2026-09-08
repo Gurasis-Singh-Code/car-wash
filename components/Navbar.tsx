@@ -55,8 +55,11 @@ export default function Navbar() {
           </Link>
 
           {/* Navigation Links & Auth Actions */}
-          <div className="flex items-center gap-0.5 sm:gap-2 shrink-0">
-            <nav className="flex items-center gap-0.5 sm:gap-1.5">
+          {/* min-w-0 lets this group shrink instead of pushing the page wider than
+              the viewport. The nav itself scrolls, so adding items can never
+              reintroduce a horizontal page scroll on a narrow phone. */}
+          <div className="flex items-center gap-0.5 sm:gap-2 min-w-0">
+            <nav className="flex items-center gap-0.5 sm:gap-1.5 min-w-0 overflow-x-auto no-scrollbar">
               {NAV_ITEMS.map((item) => {
                 const Icon = item.icon;
                 const isActive = pathname === item.href;
@@ -66,7 +69,7 @@ export default function Navbar() {
                     href={item.href}
                     aria-label={item.label}
                     aria-current={isActive ? 'page' : undefined}
-                    className={`flex items-center justify-center lg:justify-start gap-1.5 h-9 w-9 sm:h-10 sm:w-10 lg:h-auto lg:w-auto lg:px-3.5 lg:py-2 rounded-xl text-xs sm:text-sm font-medium transition-all ${
+                    className={`flex items-center justify-center lg:justify-start gap-1.5 h-9 w-9 sm:h-10 sm:w-10 lg:h-auto lg:w-auto lg:px-3.5 lg:py-2 shrink-0 rounded-xl text-xs sm:text-sm font-medium transition-all ${
                       isActive
                         ? 'bg-sage-500 text-white dark:text-charcoal-card shadow-soft-sm'
                         : 'text-charcoal-muted hover:text-charcoal hover:bg-sage-100/70'
@@ -80,13 +83,15 @@ export default function Navbar() {
               })}
             </nav>
 
-            <ThemeToggle />
+            <div className="shrink-0">
+              <ThemeToggle />
+            </div>
 
             {/* Auth Sign In / Sign Out */}
             {user ? (
               <button
                 onClick={() => signOut()}
-                className="flex items-center justify-center lg:justify-start gap-1 h-9 w-9 sm:h-10 sm:w-10 lg:h-auto lg:w-auto lg:px-3 lg:py-2 rounded-xl text-xs font-medium text-charcoal-muted hover:text-red-600 hover:bg-red-50 border border-transparent hover:border-red-200 transition-all ml-0.5 sm:ml-1"
+                className="flex items-center justify-center lg:justify-start gap-1 h-9 w-9 sm:h-10 sm:w-10 lg:h-auto lg:w-auto lg:px-3 lg:py-2 rounded-xl text-xs font-medium text-charcoal-muted hover:text-red-600 hover:bg-red-50 border border-transparent hover:border-red-200 transition-all ml-0.5 sm:ml-1 shrink-0"
                 title="Sign Out"
                 aria-label="Sign Out"
               >
@@ -96,7 +101,7 @@ export default function Navbar() {
             ) : pathname !== '/login' ? (
               <Link
                 href="/login"
-                className="flex items-center justify-center lg:justify-start gap-1 h-9 w-9 sm:h-10 sm:w-10 lg:h-auto lg:w-auto lg:px-3 lg:py-2 rounded-xl text-xs font-medium text-charcoal-muted hover:text-sage-700 hover:bg-sage-50 border border-transparent hover:border-sage-200 transition-all ml-0.5 sm:ml-1"
+                className="flex items-center justify-center lg:justify-start gap-1 h-9 w-9 sm:h-10 sm:w-10 lg:h-auto lg:w-auto lg:px-3 lg:py-2 rounded-xl text-xs font-medium text-charcoal-muted hover:text-sage-700 hover:bg-sage-50 border border-transparent hover:border-sage-200 transition-all ml-0.5 sm:ml-1 shrink-0"
                 title="Sign In"
                 aria-label="Sign In"
               >

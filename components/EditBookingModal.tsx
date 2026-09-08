@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Booking } from '@/types/booking';
+import { Detailer } from '@/types/detailer';
 import BookingForm, { BookingFormData } from './BookingForm';
 import { X } from 'lucide-react';
 
@@ -10,6 +11,7 @@ interface EditBookingModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (updatedData: BookingFormData) => void;
+  detailers?: Detailer[];
 }
 
 export default function EditBookingModal({
@@ -17,6 +19,7 @@ export default function EditBookingModal({
   isOpen,
   onClose,
   onSave,
+  detailers = [],
 }: EditBookingModalProps) {
   if (!isOpen || !booking) return null;
 
@@ -45,6 +48,7 @@ export default function EditBookingModal({
             isEditing={true}
             initialData={booking}
             submitButtonLabel="Save Changes"
+            detailers={detailers}
             onSubmit={handleSubmit}
           />
         </div>

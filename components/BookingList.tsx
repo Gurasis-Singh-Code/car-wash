@@ -12,6 +12,7 @@ import {
   serviceCardAccent,
   serviceBadgeAccent,
 } from '@/types/booking';
+import { Detailer } from '@/types/detailer';
 import ConfirmModal from './ConfirmModal';
 import { resolveInstagram } from '@/lib/instagram';
 import {
@@ -37,6 +38,7 @@ import {
   Mail,
   Truck,
   Store,
+  UserPlus,
 } from 'lucide-react';
 
 interface BookingListProps {
@@ -48,6 +50,11 @@ interface BookingListProps {
   showStatusFilter?: boolean;
   /** Adds Mobile / Shop channel tabs above the status tabs. */
   showLocationFilter?: boolean;
+  /** Adds All / Assigned / Unassigned tabs - the unassigned queue. */
+  showAssignmentFilter?: boolean;
+  /** Active detailers offered in each card's assignment dropdown. */
+  detailers?: Detailer[];
+  onAssignDetailer?: (bookingId: string, detailer: Detailer | null) => void | Promise<void>;
   onEdit?: (booking: Booking) => void;
   onDelete?: (id: string) => void;
   onStatusChange?: (id: string, newStatus: BookingStatus) => void | Promise<void>;
@@ -61,6 +68,9 @@ export default function BookingList({
   showActions = false,
   showStatusFilter = false,
   showLocationFilter = false,
+  showAssignmentFilter = false,
+  detailers = [],
+  onAssignDetailer,
   onEdit,
   onDelete,
   onStatusChange,
@@ -69,6 +79,8 @@ export default function BookingList({
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<BookingStatus | 'all'>('all');
   const [selectedLocationFilter, setSelectedLocationFilter] = useState<ServiceLocation | 'all'>('all');
   const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
+  const [selectedAssignmentFilter, setSelectedAssignmentFilter] = useState<'all' | 'assigned' | 'unassigned'>('all');
+  const [assigningId, setAssigningId] = useState<string | null>(null);
 
   // Channel scope is applied first, so the status counts below describe the
   // channel currently being viewed rather than the whole list.
@@ -89,29 +101,42 @@ export default function BookingList({
     return counts;
   }, [bookings]);
 
+  const assignmentScoped = useMemo(() => {
+    if (selectedAssignmentFilter === 'all') return locationScoped;
+    if (selectedAssignmentFilter === 'unassigned') {
+      return locationScoped.filter((b) => !b.assigned_detailer_id);
+    }
+    return locationScoped.filter((b) => Boolean(b.assigned_detailer_id));
+  }, [locationScoped, selectedAssignmentFilter]);
+
+  const assignmentCounts = useMemo(() => {
+    const assigned = locationScoped.filter((b) => Boolean(b.assigned_detailer_id)).length;
+    return { all: locationScoped.length, assigned, unassigned: locationScoped.length - assigned };
+  }, [locationScoped]);
+
   // Status counts for filter tabs
   const statusCounts = useMemo(() => {
     const counts = {
-      all: locationScoped.length,
+      all: assignmentScoped.length,
       scheduled: 0,
       completed: 0,
       cancelled: 0,
     };
-    locationScoped.forEach((b) => {
+    assignmentScoped.forEach((b) => {
       if (b.status === 'scheduled') counts.scheduled += 1;
       else if (b.status === 'completed') counts.completed += 1;
       else if (b.status === 'cancelled') counts.cancelled += 1;
     });
     return counts;
-  }, [locationScoped]);
+  }, [assignmentScoped]);
 
   // Filter bookings based on selected status filter
   const filteredBookings = useMemo(() => {
     if (selectedStatusFilter === 'all') {
-      return locationScoped;
+      return assignmentScoped;
     }
-    return locationScoped.filter((b) => b.status === selectedStatusFilter);
-  }, [locationScoped, selectedStatusFilter]);
+    return assignmentScoped.filter((b) => b.status === selectedStatusFilter);
+  }, [assignmentScoped, selectedStatusFilter]);
 
   // Sort filtered bookings by date and time ascending
   const sortedBookings = useMemo(() => {
@@ -126,6 +151,17 @@ export default function BookingList({
     if (deletingBooking && onDelete) {
       onDelete(deletingBooking.id);
       setDeletingBooking(null);
+    }
+  };
+
+  const handleAssign = async (booking: Booking, detailerId: string) => {
+    if (!onAssignDetailer) return;
+    const next = detailerId ? detailers.find((d) => d.id === detailerId) || null : null;
+    try {
+      setAssigningId(booking.id);
+      await onAssignDetailer(booking.id, next);
+    } finally {
+      setAssigningId(null);
     }
   };
 
@@ -280,6 +316,52 @@ export default function BookingList({
               {locationCounts.shop}
             </span>
           </button>
+        </div>
+      )}
+
+      {/* Assignment Filter Tabs (All / Assigned / Unassigned queue) */}
+      {showAssignmentFilter && (
+        <div className="flex items-center gap-1.5 p-1 bg-canvas border border-charcoal-border/70 rounded-2xl overflow-x-auto shadow-soft-xs">
+          {([
+            ['all', 'All', assignmentCounts.all],
+            ['assigned', 'Assigned', assignmentCounts.assigned],
+            ['unassigned', 'Unassigned', assignmentCounts.unassigned],
+          ] as const).map(([value, label, count]) => {
+            const isActive = selectedAssignmentFilter === value;
+            // Unassigned is the queue that needs action, so it reads amber when
+            // active rather than the neutral sage used elsewhere.
+            const activeCls =
+              value === 'unassigned'
+                ? 'bg-amber-100 text-amber-900 shadow-soft-xs border border-amber-300'
+                : value === 'assigned'
+                  ? 'bg-sage-100 text-sage-900 shadow-soft-xs border border-sage-300'
+                  : 'bg-charcoal-card text-charcoal shadow-soft-xs border border-charcoal-border/80';
+            const idleCls =
+              value === 'unassigned'
+                ? 'text-charcoal-muted hover:text-amber-800 hover:bg-amber-50/70'
+                : value === 'assigned'
+                  ? 'text-charcoal-muted hover:text-sage-800 hover:bg-sage-50/70'
+                  : 'text-charcoal-muted hover:text-charcoal hover:bg-charcoal-card/60';
+            return (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setSelectedAssignmentFilter(value)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${isActive ? activeCls : idleCls}`}
+              >
+                {value === 'unassigned' && <UserPlus className="w-3 h-3" />}
+                {value === 'assigned' && <UserCheck className="w-3 h-3" />}
+                <span>{label}</span>
+                <span
+                  className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                    isActive ? 'bg-charcoal-card/70 text-charcoal' : 'bg-charcoal-border/40 text-charcoal-muted'
+                  }`}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -549,6 +631,52 @@ export default function BookingList({
                         {booking.has_water ? 'Water On-Site' : 'No Water'}
                       </span>
                     </div>
+
+                    {/* Assign Detailer. Shown only where a handler is supplied,
+                        so read-only lists such as the Dashboard are untouched. */}
+                    {onAssignDetailer && (
+                      <div className="pt-2 border-t border-charcoal-border/30 flex flex-wrap items-center gap-2">
+                        <label
+                          htmlFor={`assign_${booking.id}`}
+                          className="text-[11px] font-semibold uppercase tracking-wider text-charcoal-muted flex items-center gap-1"
+                        >
+                          <UserPlus className="w-3 h-3" />
+                          Detailer:
+                        </label>
+                        <select
+                          id={`assign_${booking.id}`}
+                          value={booking.assigned_detailer_id || ''}
+                          disabled={assigningId === booking.id}
+                          onChange={(e) => handleAssign(booking, e.target.value)}
+                          className={`px-3 py-2 sm:py-1.5 rounded-lg text-sm sm:text-xs font-semibold border transition-colors cursor-pointer disabled:opacity-60 ${
+                            booking.assigned_detailer_id
+                              ? 'bg-canvas border-charcoal-border text-charcoal focus:border-sage-500'
+                              : 'bg-amber-50 border-amber-300 text-amber-900 focus:border-amber-500'
+                          }`}
+                        >
+                          <option value="">Unassigned</option>
+                          {/* An inactive detailer still shows while assigned, so
+                              deactivating someone never blanks their bookings. */}
+                          {booking.assigned_detailer_id &&
+                            !detailers.some((d) => d.id === booking.assigned_detailer_id) && (
+                              <option value={booking.assigned_detailer_id}>
+                                {booking.assigned_detailer || 'Current detailer'}
+                              </option>
+                            )}
+                          {detailers.map((d) => (
+                            <option key={d.id} value={d.id}>
+                              {d.name}
+                            </option>
+                          ))}
+                        </select>
+                        {assigningId === booking.id && (
+                          <span className="inline-flex items-center gap-1 text-[11px] text-sage-700">
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                            <span>Saving…</span>
+                          </span>
+                        )}
+                      </div>
+                    )}
 
                     {/* Row 4 (Admin Mode): Interactive Status Switcher Toggle (Scheduled / Completed / Cancelled) */}
                     {onStatusChange && (

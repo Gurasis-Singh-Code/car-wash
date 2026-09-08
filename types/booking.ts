@@ -29,6 +29,13 @@ export interface Booking {
   email?: string;
   car_count?: number;
   assigned_detailer?: string;
+  /**
+   * The real link to a detailers row. assigned_detailer above is kept in sync
+   * with that detailer name so existing name-based grouping keeps working.
+   */
+  assigned_detailer_id?: string | null;
+  /** Quoted total, tax included. Written by the DM agent; the panel reads it. */
+  price?: number;
   service: ServiceType;
   /** Mobile visit or in-shop job. Defaults to 'mobile' for pre-existing rows. */
   service_location?: ServiceLocation;

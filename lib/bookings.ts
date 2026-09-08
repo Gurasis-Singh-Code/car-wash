@@ -40,6 +40,8 @@ function decodeBookingFromDb(row: any): Booking {
     email,
     car_count,
     assigned_detailer,
+    assigned_detailer_id: row.assigned_detailer_id || null,
+    price: row.price !== null && row.price !== undefined ? Number(row.price) : undefined,
     service: row.service,
     // Rows created before the shop channel existed have the column default.
     service_location: row.service_location || 'mobile',
@@ -175,6 +177,7 @@ export async function addBooking(
     email: emailValue,
     car_count: carCount,
     assigned_detailer: assignedDetailer,
+    assigned_detailer_id: data.assigned_detailer_id ?? null,
     service: normalizeService(data.service) || 'interior_silver',
     service_location: data.service_location || 'mobile',
     address: cleanAddress,
@@ -240,6 +243,9 @@ export async function updateBooking(
     ...(emailValue !== undefined ? { email: emailValue } : {}),
     ...(carCount !== undefined ? { car_count: carCount } : {}),
     ...(assignedDetailer !== undefined ? { assigned_detailer: assignedDetailer } : {}),
+    ...(data.assigned_detailer_id !== undefined
+      ? { assigned_detailer_id: data.assigned_detailer_id }
+      : {}),
     ...(data.service ? { service: normalizeService(data.service) } : {}),
     ...(data.service_location !== undefined
       ? { service_location: data.service_location }
@@ -321,4 +327,38 @@ export function subscribeToBookings(callback: () => void): () => void {
   return () => {
     supabase.removeChannel(channel);
   };
+}
+
+/**
+ * Assign (or clear) a booking's detailer.
+ *
+ * Writes both columns in one statement: assigned_detailer_id is the real link,
+ * and assigned_detailer keeps the detailer's name so the Overview page's
+ * name-based grouping, search and badges keep working unchanged. Doing it here,
+ * in a single place, is what stops the two drifting apart.
+ */
+export async function assignDetailer(
+  bookingId: string,
+  detailer: { id: string; name: string } | null
+): Promise<Booking> {
+  if (!isSupabaseConfigured()) {
+    throw new Error('Supabase is not configured. Please set your credentials in .env.local');
+  }
+
+  const { data, error } = await supabase
+    .from('bookings')
+    .update({
+      assigned_detailer_id: detailer ? detailer.id : null,
+      assigned_detailer: detailer ? detailer.name : 'Unassigned',
+    })
+    .eq('id', bookingId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('[Supabase assignDetailer error]:', error.message);
+    throw new Error(error.message);
+  }
+
+  return decodeBookingFromDb(data);
 }

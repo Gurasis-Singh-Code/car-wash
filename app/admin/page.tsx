@@ -1,23 +1,34 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Booking, BookingStatus } from '@/types/booking';
+import { Detailer } from '@/types/detailer';
 import {
   getBookings,
   addBooking,
   updateBooking,
   deleteBooking,
   subscribeToBookings,
+  assignDetailer,
 } from '@/lib/bookings';
+import {
+  getDetailers,
+  addDetailer,
+  updateDetailerStatus,
+  deleteDetailer,
+  subscribeToDetailers,
+} from '@/lib/detailers';
 import { useAuth } from '@/components/AuthProvider';
 import BookingForm, { BookingFormData } from '@/components/BookingForm';
 import BookingList from '@/components/BookingList';
 import EditBookingModal from '@/components/EditBookingModal';
+import DetailerManager from '@/components/DetailerManager';
 import { ShieldCheck, RefreshCw, AlertCircle, Sparkles } from 'lucide-react';
 
 export default function AdminPage() {
   const { isConfigured } = useAuth();
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [detailers, setDetailers] = useState<Detailer[]>([]);
   const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,6 +46,21 @@ export default function AdminPage() {
     }
   }, []);
 
+  const loadDetailers = useCallback(async () => {
+    try {
+      setDetailers(await getDetailers());
+    } catch (err: any) {
+      console.error('[AdminPage loadDetailers error]:', err);
+      setError(err?.message || 'Failed to load detailers from Supabase.');
+    }
+  }, []);
+
+  useEffect(() => {
+    loadDetailers();
+    const unsubscribeDetailers = subscribeToDetailers(() => loadDetailers());
+    return () => unsubscribeDetailers();
+  }, [loadDetailers]);
+
   useEffect(() => {
     loadBookings();
 
@@ -48,6 +74,78 @@ export default function AdminPage() {
       unsubscribe();
     };
   }, [loadBookings]);
+
+  // Only active detailers are offered for new assignments; an already-assigned
+  // inactive detailer stays visible on their own bookings.
+  const activeDetailers = useMemo(
+    () => detailers.filter((d) => d.status === 'active'),
+    [detailers]
+  );
+
+  const assignedCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    bookings.forEach((b) => {
+      if (b.assigned_detailer_id) {
+        counts[b.assigned_detailer_id] = (counts[b.assigned_detailer_id] || 0) + 1;
+      }
+    });
+    return counts;
+  }, [bookings]);
+
+  const handleAssignDetailer = async (bookingId: string, detailer: Detailer | null) => {
+    const previousBookings = [...bookings];
+    setBookings((prev) =>
+      prev.map((b) =>
+        b.id === bookingId
+          ? {
+              ...b,
+              assigned_detailer_id: detailer ? detailer.id : null,
+              assigned_detailer: detailer ? detailer.name : 'Unassigned',
+            }
+          : b
+      )
+    );
+
+    try {
+      setError(null);
+      await assignDetailer(bookingId, detailer);
+    } catch (err: any) {
+      console.error('[handleAssignDetailer error]:', err);
+      setBookings(previousBookings);
+      setError(err?.message || 'Failed to assign detailer on Supabase.');
+    }
+  };
+
+  const handleAddDetailer = async (name: string) => {
+    const created = await addDetailer(name);
+    setDetailers((prev) => [...prev, created]);
+  };
+
+  const handleToggleDetailerStatus = async (detailer: Detailer) => {
+    const next = detailer.status === 'active' ? 'inactive' : 'active';
+    try {
+      setError(null);
+      const updated = await updateDetailerStatus(detailer.id, next);
+      setDetailers((prev) => prev.map((d) => (d.id === updated.id ? updated : d)));
+    } catch (err: any) {
+      setError(err?.message || 'Failed to update detailer status.');
+    }
+  };
+
+  const handleDeleteDetailer = async (detailer: Detailer) => {
+    const previousDetailers = [...detailers];
+    setDetailers((prev) => prev.filter((d) => d.id !== detailer.id));
+    try {
+      setError(null);
+      await deleteDetailer(detailer.id);
+      // Their bookings return to the unassigned queue (FK is ON DELETE SET NULL).
+      await loadBookings();
+    } catch (err: any) {
+      console.error('[handleDeleteDetailer error]:', err);
+      setDetailers(previousDetailers);
+      setError(err?.message || 'Failed to delete detailer.');
+    }
+  };
 
   // Create booking handler wired to Supabase addBooking
   const handleCreateBooking = async (formData: BookingFormData) => {
@@ -187,7 +285,16 @@ export default function AdminPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-start">
         {/* Left Column: Booking Form */}
         <div className="lg:col-span-5 flex justify-center lg:justify-start w-full">
-          <BookingForm onSubmit={handleCreateBooking} />
+          <div className="w-full space-y-6 sm:space-y-8">
+            <BookingForm onSubmit={handleCreateBooking} detailers={activeDetailers} />
+            <DetailerManager
+              detailers={detailers}
+              assignedCounts={assignedCounts}
+              onAdd={handleAddDetailer}
+              onToggleStatus={handleToggleDetailerStatus}
+              onDelete={handleDeleteDetailer}
+            />
+          </div>
         </div>
 
         {/* Right Column: Manage Bookings List */}
@@ -199,6 +306,9 @@ export default function AdminPage() {
             emptyMessage="No bookings scheduled yet"
             showActions={true}
             showLocationFilter={true}
+            showAssignmentFilter={true}
+            detailers={activeDetailers}
+            onAssignDetailer={handleAssignDetailer}
             showStatusFilter={true}
             onStatusChange={handleStatusChange}
             onEdit={handleEditClick}
@@ -213,6 +323,7 @@ export default function AdminPage() {
         isOpen={Boolean(editingBooking)}
         onClose={() => setEditingBooking(null)}
         onSave={handleSaveEditedBooking}
+        detailers={activeDetailers}
       />
     </div>
   );

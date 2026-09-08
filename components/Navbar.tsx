@@ -15,6 +15,7 @@ import {
   Inbox,
   Truck,
   Store,
+  Wallet,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -23,6 +24,7 @@ const NAV_ITEMS = [
   { href: '/shop', label: 'Shop', icon: Store, title: 'Shop Bookings' },
   { href: '/leads', label: 'Leads', icon: Inbox, title: 'Inbound Leads' },
   { href: '/overview', label: 'Overview', icon: BarChart3, title: 'Performance Overview' },
+  { href: '/finance', label: 'Finance', icon: Wallet, title: 'Revenue & Expenses' },
   { href: '/admin', label: 'Admin', icon: Settings, title: 'Admin Management' },
 ];
 

@@ -359,9 +359,95 @@ as $$
 $$;
 
 -- ==============================================================================
+-- DETAILERS
+-- Staff who can be assigned to a booking. Created with just a name; status
+-- controls whether they appear in the assignment dropdown. Deactivating someone
+-- hides them from new assignments without touching bookings they already hold.
+-- Source: supabase migration add_detailers_and_expenses.
+-- ==============================================================================
+create type detailer_status as enum ('active','inactive');
+
+create table if not exists detailers (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  status detailer_status not null default 'active',
+  created_at timestamptz not null default now()
+);
+
+create index if not exists detailers_status_idx on detailers (status);
+create unique index if not exists detailers_name_unique on detailers (lower(trim(name)));
+
+alter table detailers enable row level security;
+
+create policy "Authenticated users full access"
+on detailers for all
+to authenticated
+using (true)
+with check (true);
+
+-- bookings.assigned_detailer_id is the real link. The older assigned_detailer
+-- TEXT column is kept in sync with the detailer's name (written together in
+-- lib/bookings assignDetailer) so the Overview page's name-based grouping,
+-- search and badges keep working unchanged.
+--
+-- ON DELETE SET NULL: removing a detailer must never delete a customer booking.
+-- Their bookings simply return to the Unassigned queue.
+alter table bookings
+  add column if not exists assigned_detailer_id uuid references detailers (id) on delete set null;
+
+create index if not exists bookings_assigned_detailer_id_idx on bookings (assigned_detailer_id);
+
+-- ==============================================================================
+-- EXPENSES
+-- Manual entries only - nothing here is ever auto-generated, including detailer
+-- pay. Category is free text so new ones can be invented on the spot.
+--
+-- service_location is nullable on purpose: null means shared overhead belonging
+-- to neither channel. Per-location profit on the Finance page subtracts only
+-- that location's own tagged expenses; shared costs are reported on their own
+-- line and counted once in the combined figure, so nothing is silently
+-- apportioned between Mobile and Shop.
+--
+-- Revenue on that page counts COMPLETED bookings only. Scheduled work is
+-- pipeline and cancelled bookings still carry a price, so including either
+-- would inflate profit against real expenses.
+-- ==============================================================================
+create type expense_type as enum ('fixed','variable');
+
+create table if not exists expenses (
+  id uuid primary key default gen_random_uuid(),
+  category text not null,                     -- free text, admin-defined
+  type expense_type not null default 'variable',
+  amount numeric not null check (amount >= 0),
+  date date not null default current_date,
+  service_location service_location,          -- null = shared overhead
+  notes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists expenses_date_idx on expenses (date desc);
+create index if not exists expenses_category_idx on expenses (lower(trim(category)));
+create index if not exists expenses_type_idx on expenses (type);
+
+create trigger expenses_touch_updated_at
+before update on expenses
+for each row execute function set_updated_at();
+
+alter table expenses enable row level security;
+
+create policy "Authenticated users full access"
+on expenses for all
+to authenticated
+using (true)
+with check (true);
+
+-- ==============================================================================
 -- REALTIME
 -- Both tables must belong to the supabase_realtime publication or the app's
 -- postgres_changes subscriptions ("Live Sync") receive no events at all.
 -- ==============================================================================
 alter publication supabase_realtime add table public.bookings;
 alter publication supabase_realtime add table public.leads;
+alter publication supabase_realtime add table public.detailers;
+alter publication supabase_realtime add table public.expenses;

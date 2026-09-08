@@ -13,6 +13,7 @@ import {
   BOOKABLE_SERVICES,
   SERVICE_LOCATION_LABELS,
 } from '@/types/booking';
+import { Detailer } from '@/types/detailer';
 import { resolveInstagram } from '@/lib/instagram';
 import {
   Calendar,
@@ -45,6 +46,8 @@ interface BookingFormProps {
    * editable; when editing, the booking's own value wins.
    */
   serviceLocation?: ServiceLocation;
+  /** Active detailers offered in the Assign Detailer dropdown. */
+  detailers?: Detailer[];
 }
 
 // 9:00 AM to 7:00 PM with 30-minute intervals
@@ -78,6 +81,7 @@ export default function BookingForm({
   submitButtonLabel = 'Create Booking',
   isEditing = false,
   serviceLocation,
+  detailers = [],
 }: BookingFormProps) {
   // Get today in YYYY-MM-DD format for min date validation
   const todayDateString = new Date().toISOString().split('T')[0];
@@ -91,8 +95,8 @@ export default function BookingForm({
   );
   const [email, setEmail] = useState(initialData?.email || '');
   const [carCount, setCarCount] = useState<number>(initialData?.car_count || 1);
-  const [assignedDetailer, setAssignedDetailer] = useState(
-    initialData?.assigned_detailer === 'Unassigned' ? '' : (initialData?.assigned_detailer || '')
+  const [assignedDetailerId, setAssignedDetailerId] = useState<string>(
+    initialData?.assigned_detailer_id || ''
   );
   const [service, setService] = useState<ServiceType>(initialData?.service || 'interior_silver');
 
@@ -125,9 +129,7 @@ export default function BookingForm({
       );
       setEmail(initialData.email || '');
       setCarCount(initialData.car_count || 1);
-      setAssignedDetailer(
-        initialData.assigned_detailer === 'Unassigned' ? '' : (initialData.assigned_detailer || '')
-      );
+      setAssignedDetailerId(initialData.assigned_detailer_id || '');
       setService(initialData.service || 'interior_silver');
       setLocation(initialData.service_location || 'mobile');
       setStatus(initialData.status || 'scheduled');
@@ -193,7 +195,11 @@ export default function BookingForm({
       instagram_username: instagramUsername.trim().replace(/^@/, ''),
       email: email.trim(),
       car_count: Number(carCount) || 1,
-      assigned_detailer: assignedDetailer.trim() || 'Unassigned',
+      assigned_detailer_id: assignedDetailerId || null,
+      assigned_detailer:
+        detailers.find((d) => d.id === assignedDetailerId)?.name ||
+        (assignedDetailerId ? initialData?.assigned_detailer : undefined) ||
+        'Unassigned',
       service,
       service_location: location,
       status: isEditing ? status : undefined,
@@ -227,7 +233,7 @@ export default function BookingForm({
         setInstagramUsername('');
         setEmail('');
         setCarCount(1);
-        setAssignedDetailer('');
+        setAssignedDetailerId('');
         setAddress('');
         setService('interior_silver');
         setCarType('sedan');
@@ -425,14 +431,29 @@ export default function BookingForm({
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-charcoal-muted">
                 <UserCheck className="w-4 h-4 text-sage-600" />
               </div>
-              <input
+              {/* A select rather than free text, so the name can never disagree
+                  with assigned_detailer_id. Add detailers on the Admin page. */}
+              <select
                 id="assigned_detailer"
-                type="text"
-                value={assignedDetailer}
-                onChange={(e) => setAssignedDetailer(e.target.value)}
-                placeholder="e.g. Name of Detailer"
-                className="w-full pl-10 pr-3.5 py-2.5 rounded-xl text-base sm:text-sm bg-canvas border border-charcoal-border text-charcoal placeholder:text-charcoal-light/70 focus:border-sage-500 focus:bg-charcoal-card transition-colors"
-              />
+                value={assignedDetailerId}
+                onChange={(e) => setAssignedDetailerId(e.target.value)}
+                className="w-full pl-10 pr-3.5 py-2.5 rounded-xl text-base sm:text-sm bg-canvas border border-charcoal-border text-charcoal focus:border-sage-500 focus:bg-charcoal-card transition-colors cursor-pointer"
+              >
+                <option value="">Unassigned</option>
+                {/* Keep an already-assigned but now-inactive detailer selectable
+                    so editing a booking cannot silently unassign them. */}
+                {assignedDetailerId &&
+                  !detailers.some((d) => d.id === assignedDetailerId) && (
+                    <option value={assignedDetailerId}>
+                      {initialData?.assigned_detailer || 'Current detailer'}
+                    </option>
+                  )}
+                {detailers.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </div>

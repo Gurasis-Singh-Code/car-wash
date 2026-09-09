@@ -13,6 +13,7 @@ import {
   serviceBadgeAccent,
 } from '@/types/booking';
 import { Detailer } from '@/types/detailer';
+import { formatMoney } from '@/types/expense';
 import ConfirmModal from './ConfirmModal';
 import { resolveInstagram } from '@/lib/instagram';
 import {
@@ -29,6 +30,7 @@ import {
   AlertCircle,
   Clock3,
   Hourglass,
+  DollarSign,
   Phone,
   UserCheck,
   Filter,
@@ -566,6 +568,18 @@ export default function BookingList({
                           {CAR_TYPE_LABELS[booking.car_type] || booking.car_type}
                         </span>
                       </span>
+
+                      {/* Quoted price, tax included. Shown as a distinct chip
+                          rather than another grey pill because it is the field
+                          most often checked at a glance. A booking that was
+                          never quoted shows nothing, so a missing price stays
+                          visible as missing instead of reading as $0.00. */}
+                      {booking.price != null && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sage-100 text-sage-800 border border-sage-200 tabular-nums">
+                          <DollarSign className="w-3 h-3 text-sage-700 shrink-0" />
+                          <span>{formatMoney(booking.price)}</span>
+                        </span>
+                      )}
 
                       {/* Assigned Detailer */}
                       {booking.assigned_detailer && booking.assigned_detailer !== 'Unassigned' ? (

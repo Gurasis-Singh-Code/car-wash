@@ -183,6 +183,9 @@ export async function addBooking(
     assigned_detailer_id: data.assigned_detailer_id ?? null,
     service: normalizeService(data.service) || 'interior_silver',
     service_location: data.service_location || 'mobile',
+    // Null rather than 0 when left blank, so an unquoted booking stays visibly
+    // unquoted instead of counting as a genuine $0 job in the revenue figures.
+    price: data.price === undefined || data.price === null ? null : Number(data.price),
     address: cleanAddress,
     booking_date: data.booking_date,
     booking_time: data.booking_time,
@@ -250,6 +253,11 @@ export async function updateBooking(
       ? { assigned_detailer_id: data.assigned_detailer_id }
       : {}),
     ...(data.service ? { service: normalizeService(data.service) } : {}),
+    // Sent even when null so clearing the field actually clears the column,
+    // matching how instagram_username and email already behave.
+    ...(data.price !== undefined
+      ? { price: data.price === null ? null : Number(data.price) }
+      : {}),
     ...(data.service_location !== undefined
       ? { service_location: data.service_location }
       : {}),

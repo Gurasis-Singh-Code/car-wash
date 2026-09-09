@@ -29,6 +29,7 @@ import {
   Phone,
   UserCheck,
   Hash,
+  DollarSign,
   Instagram,
   Mail,
 } from 'lucide-react';
@@ -95,6 +96,12 @@ export default function BookingForm({
   );
   const [email, setEmail] = useState(initialData?.email || '');
   const [carCount, setCarCount] = useState<number>(initialData?.car_count || 1);
+  // Kept as text, not a number, so the field can be genuinely empty. A numeric
+  // state would force 0 into an unquoted booking and make it look like free work
+  // in the revenue figures.
+  const [priceText, setPriceText] = useState<string>(
+    initialData?.price != null ? String(initialData.price) : ''
+  );
   const [assignedDetailerId, setAssignedDetailerId] = useState<string>(
     initialData?.assigned_detailer_id || ''
   );
@@ -129,6 +136,7 @@ export default function BookingForm({
       );
       setEmail(initialData.email || '');
       setCarCount(initialData.car_count || 1);
+      setPriceText(initialData.price != null ? String(initialData.price) : '');
       setAssignedDetailerId(initialData.assigned_detailer_id || '');
       setService(initialData.service || 'interior_silver');
       setLocation(initialData.service_location || 'mobile');
@@ -167,6 +175,15 @@ export default function BookingForm({
       newErrors.car_count = 'Must specify at least 1 vehicle';
     }
 
+    // Price is optional in the same way. Validated only when something was
+    // typed, so a booking taken before the quote is settled is still bookable.
+    if (priceText.trim()) {
+      const parsed = Number(priceText);
+      if (!Number.isFinite(parsed) || parsed < 0) {
+        newErrors.price = 'Enter a price of 0 or more, or leave it blank';
+      }
+    }
+
     // Email is optional. Only validate the format when something was typed,
     // so leaving it blank can never block a booking.
     if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim())) {
@@ -195,6 +212,9 @@ export default function BookingForm({
       instagram_username: instagramUsername.trim().replace(/^@/, ''),
       email: email.trim(),
       car_count: Number(carCount) || 1,
+      // undefined would leave the column alone on edit; null clears it. An empty
+      // field means "not quoted", which has to be storable.
+      price: priceText.trim() === '' ? (null as any) : Number(priceText),
       assigned_detailer_id: assignedDetailerId || null,
       assigned_detailer:
         detailers.find((d) => d.id === assignedDetailerId)?.name ||
@@ -545,6 +565,51 @@ export default function BookingForm({
             {errors.car_count && (
               <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" /> {errors.car_count}
+              </p>
+            )}
+          </div>
+
+          {/* Price. Optional, because a booking is often taken before the quote
+              is settled — but leaving it blank keeps the job out of every
+              revenue figure, so the hint says so rather than letting it be
+              skipped silently. */}
+          <div>
+            <label
+              htmlFor="price"
+              className="block text-xs font-semibold uppercase tracking-wider text-charcoal mb-1.5"
+            >
+              Price <span className="text-charcoal-muted font-medium normal-case">(tax included)</span>
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-charcoal-muted">
+                <DollarSign className="w-4 h-4 text-sage-600" />
+              </div>
+              <input
+                id="price"
+                type="number"
+                min={0}
+                step="0.01"
+                inputMode="decimal"
+                value={priceText}
+                onChange={(e) => {
+                  setPriceText(e.target.value);
+                  if (errors.price) setErrors((prev) => ({ ...prev, price: '' }));
+                }}
+                placeholder="e.g. 130"
+                className={`w-full pl-10 pr-3.5 py-2.5 rounded-xl text-base sm:text-sm bg-canvas border ${
+                  errors.price
+                    ? 'border-red-400 focus:border-red-500'
+                    : 'border-charcoal-border focus:border-sage-500'
+                } text-charcoal focus:bg-charcoal-card transition-colors`}
+              />
+            </div>
+            {errors.price ? (
+              <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" /> {errors.price}
+              </p>
+            ) : (
+              <p className="mt-1 text-[11px] text-charcoal-muted">
+                Total for all vehicles. Left blank, this job counts as $0 revenue.
               </p>
             )}
           </div>

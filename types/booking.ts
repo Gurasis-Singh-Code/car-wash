@@ -48,8 +48,19 @@ export interface Booking {
   /** Which detailer last handed this booking back, if any. */
   last_declined_by?: string | null;
   last_declined_at?: string | null;
-  /** Quoted total, tax included. Written by the DM agent; the panel reads it. */
+  /**
+   * The BASE price for the service, tax included. Surcharges are NOT in here —
+   * see bookingTotal() for what the customer actually pays.
+   */
   price?: number;
+  /**
+   * Surcharges, stored as the amount charged rather than as a flag, so that
+   * changing the standard rate later cannot silently rewrite what an old job
+   * was billed. Null means the surcharge does not apply to this booking; 0
+   * means it applies but was waived.
+   */
+  engine_bay_fee?: number | null;
+  out_of_area_fee?: number | null;
   service: ServiceType;
   /** Mobile visit or in-shop job. Defaults to 'mobile' for pre-existing rows. */
   service_location?: ServiceLocation;
@@ -67,6 +78,37 @@ export interface BookingStats {
   week_count: number;
   upcoming_count: number;
   completed_count: number;
+}
+
+/** Standard surcharges. Prefilled on the form; the stored amount is what counts. */
+export const ENGINE_BAY_FEE = 30;
+export const OUT_OF_AREA_FEE = 20;
+
+export const SURCHARGE_LABELS = {
+  engine_bay: 'Engine bay',
+  out_of_area: 'Outside service area',
+};
+
+/**
+ * What the customer actually pays: the base price plus any surcharges.
+ *
+ * Every figure that represents money — the revenue on the Finance page, the
+ * chip on a booking card, the amount a detailer sees — goes through this, so
+ * the base and the extras can never be added up differently in two places.
+ *
+ * Returns null when the booking has no price and no surcharges at all, which is
+ * how an unquoted job stays visibly unquoted instead of counting as $0.
+ */
+export function bookingTotal(booking: {
+  price?: number;
+  engine_bay_fee?: number | null;
+  out_of_area_fee?: number | null;
+}): number | null {
+  const parts = [booking.price, booking.engine_bay_fee, booking.out_of_area_fee].filter(
+    (v): v is number => v !== null && v !== undefined
+  );
+  if (parts.length === 0) return null;
+  return parts.reduce((sum, v) => sum + v, 0);
 }
 
 export const SERVICE_LABELS: Record<string, string> = {

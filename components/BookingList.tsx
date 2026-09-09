@@ -11,6 +11,8 @@ import {
   SERVICE_LOCATION_LABELS,
   serviceCardAccent,
   serviceBadgeAccent,
+  bookingTotal,
+  SURCHARGE_LABELS,
 } from '@/types/booking';
 import { Detailer } from '@/types/detailer';
 import { formatMoney } from '@/types/expense';
@@ -31,6 +33,8 @@ import {
   Clock3,
   Hourglass,
   DollarSign,
+  Wrench,
+  MapPinned,
   Phone,
   UserCheck,
   Filter,
@@ -574,10 +578,39 @@ export default function BookingList({
                           most often checked at a glance. A booking that was
                           never quoted shows nothing, so a missing price stays
                           visible as missing instead of reading as $0.00. */}
-                      {booking.price != null && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sage-100 text-sage-800 border border-sage-200 tabular-nums">
+                      {bookingTotal(booking) != null && (
+                        <span
+                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sage-100 text-sage-800 border border-sage-200 tabular-nums"
+                          title={
+                            booking.engine_bay_fee != null || booking.out_of_area_fee != null
+                              ? `${formatMoney(booking.price ?? 0)} base` +
+                                (booking.engine_bay_fee != null
+                                  ? ` + ${formatMoney(booking.engine_bay_fee)} engine bay`
+                                  : '') +
+                                (booking.out_of_area_fee != null
+                                  ? ` + ${formatMoney(booking.out_of_area_fee)} out of area`
+                                  : '')
+                              : undefined
+                          }
+                        >
                           <DollarSign className="w-3 h-3 text-sage-700 shrink-0" />
-                          <span>{formatMoney(booking.price)}</span>
+                          <span>{formatMoney(bookingTotal(booking) as number)}</span>
+                        </span>
+                      )}
+
+                      {/* Extras are called out separately: the detailer has to
+                          know to do the engine bay, and the office needs to see
+                          why a total sits above the standard rate. */}
+                      {booking.engine_bay_fee != null && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200/70">
+                          <Wrench className="w-3 h-3 shrink-0" />
+                          <span>{SURCHARGE_LABELS.engine_bay}</span>
+                        </span>
+                      )}
+                      {booking.out_of_area_fee != null && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200/70">
+                          <MapPinned className="w-3 h-3 shrink-0" />
+                          <span>{SURCHARGE_LABELS.out_of_area}</span>
                         </span>
                       )}
 

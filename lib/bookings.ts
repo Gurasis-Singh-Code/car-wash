@@ -45,6 +45,12 @@ function decodeBookingFromDb(row: any): Booking {
     last_declined_by: row.last_declined_by ?? null,
     last_declined_at: row.last_declined_at ?? null,
     price: row.price !== null && row.price !== undefined ? Number(row.price) : undefined,
+    engine_bay_fee: row.engine_bay_fee !== null && row.engine_bay_fee !== undefined
+      ? Number(row.engine_bay_fee)
+      : null,
+    out_of_area_fee: row.out_of_area_fee !== null && row.out_of_area_fee !== undefined
+      ? Number(row.out_of_area_fee)
+      : null,
     service: row.service,
     // Rows created before the shop channel existed have the column default.
     service_location: row.service_location || 'mobile',
@@ -186,6 +192,16 @@ export async function addBooking(
     // Null rather than 0 when left blank, so an unquoted booking stays visibly
     // unquoted instead of counting as a genuine $0 job in the revenue figures.
     price: data.price === undefined || data.price === null ? null : Number(data.price),
+    // Null means the surcharge does not apply, so an untouched booking is not
+    // recorded as having had a waived engine bay.
+    engine_bay_fee:
+      data.engine_bay_fee === undefined || data.engine_bay_fee === null
+        ? null
+        : Number(data.engine_bay_fee),
+    out_of_area_fee:
+      data.out_of_area_fee === undefined || data.out_of_area_fee === null
+        ? null
+        : Number(data.out_of_area_fee),
     address: cleanAddress,
     booking_date: data.booking_date,
     booking_time: data.booking_time,
@@ -257,6 +273,12 @@ export async function updateBooking(
     // matching how instagram_username and email already behave.
     ...(data.price !== undefined
       ? { price: data.price === null ? null : Number(data.price) }
+      : {}),
+    ...(data.engine_bay_fee !== undefined
+      ? { engine_bay_fee: data.engine_bay_fee === null ? null : Number(data.engine_bay_fee) }
+      : {}),
+    ...(data.out_of_area_fee !== undefined
+      ? { out_of_area_fee: data.out_of_area_fee === null ? null : Number(data.out_of_area_fee) }
       : {}),
     ...(data.service_location !== undefined
       ? { service_location: data.service_location }

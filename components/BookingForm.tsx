@@ -12,7 +12,12 @@ import {
   STATUS_LABELS,
   BOOKABLE_SERVICES,
   SERVICE_LOCATION_LABELS,
+  SURCHARGE_LABELS,
+  ENGINE_BAY_FEE,
+  OUT_OF_AREA_FEE,
+  bookingTotal,
 } from '@/types/booking';
+import { formatMoney } from '@/types/expense';
 import { Detailer } from '@/types/detailer';
 import { resolveInstagram } from '@/lib/instagram';
 import {
@@ -30,11 +35,93 @@ import {
   UserCheck,
   Hash,
   DollarSign,
+  Wrench,
+  MapPinned,
   Instagram,
   Mail,
 } from 'lucide-react';
 
 export type BookingFormData = Omit<Booking, 'id' | 'status'> & { status?: BookingStatus };
+
+/**
+ * One optional surcharge: a toggle that applies the standard rate, plus the
+ * amount itself so it can be adjusted or waived to zero on a given job.
+ * An empty value means the surcharge does not apply at all.
+ */
+function SurchargeRow({
+  id,
+  icon: Icon,
+  label,
+  hint,
+  defaultAmount,
+  value,
+  onChange,
+}: {
+  id: string;
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  hint: string;
+  defaultAmount: number;
+  value: string;
+  onChange: (next: string) => void;
+}) {
+  const applied = value.trim() !== '';
+
+  return (
+    <div className="flex items-center justify-between gap-2 p-3 rounded-xl bg-canvas border border-charcoal-border/70">
+      <label htmlFor={id} className="flex items-center gap-2.5 min-w-0 cursor-pointer">
+        <div
+          className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+            applied ? 'bg-sage-100 text-sage-700' : 'bg-charcoal-border/50 text-charcoal-muted'
+          }`}
+        >
+          <Icon className="w-4 h-4" />
+        </div>
+        <div className="min-w-0">
+          <span className="text-xs font-semibold text-charcoal block">{label}</span>
+          <span className="text-[11px] text-charcoal-muted block">{hint}</span>
+        </div>
+      </label>
+
+      <div className="flex items-center gap-2 shrink-0">
+        {applied && (
+          <div className="relative">
+            <span className="absolute inset-y-0 left-0 pl-2.5 flex items-center text-charcoal-muted text-xs">
+              $
+            </span>
+            <input
+              id={id}
+              type="number"
+              min={0}
+              step="0.01"
+              inputMode="decimal"
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              aria-label={`${label} amount`}
+              className="w-20 pl-5 pr-2 py-1.5 rounded-lg text-base sm:text-xs bg-charcoal-card border border-charcoal-border focus:border-sage-500 text-charcoal transition-colors"
+            />
+          </div>
+        )}
+        <button
+          type="button"
+          role="switch"
+          aria-checked={applied}
+          aria-label={label}
+          onClick={() => onChange(applied ? '' : String(defaultAmount))}
+          className={`w-10 h-6 rounded-full relative transition-colors ${
+            applied ? 'bg-sage-500' : 'bg-charcoal-border'
+          }`}
+        >
+          <span
+            className={`absolute top-[2px] h-5 w-5 rounded-full border border-charcoal-border bg-charcoal-card transition-all ${
+              applied ? 'left-[18px]' : 'left-[2px]'
+            }`}
+          />
+        </button>
+      </div>
+    </div>
+  );
+}
 
 interface BookingFormProps {
   onSubmit?: (data: BookingFormData) => void | Promise<void>;
@@ -102,6 +189,14 @@ export default function BookingForm({
   const [priceText, setPriceText] = useState<string>(
     initialData?.price != null ? String(initialData.price) : ''
   );
+  // Surcharges are held as text for the same reason as price: null (not charged)
+  // and 0 (charged but waived) are different facts and both must be expressible.
+  const [engineBayText, setEngineBayText] = useState<string>(
+    initialData?.engine_bay_fee != null ? String(initialData.engine_bay_fee) : ''
+  );
+  const [outOfAreaText, setOutOfAreaText] = useState<string>(
+    initialData?.out_of_area_fee != null ? String(initialData.out_of_area_fee) : ''
+  );
   const [assignedDetailerId, setAssignedDetailerId] = useState<string>(
     initialData?.assigned_detailer_id || ''
   );
@@ -123,6 +218,15 @@ export default function BookingForm({
   const [hasPower, setHasPower] = useState(initialData?.has_power ?? false);
   const [hasWater, setHasWater] = useState(initialData?.has_water ?? false);
 
+  // What the customer will be charged, as the form currently stands. Computed
+  // through the same bookingTotal() the cards and the revenue figures use, so
+  // the number shown here is the number that gets counted.
+  const liveTotal = bookingTotal({
+    price: priceText.trim() === '' ? undefined : Number(priceText),
+    engine_bay_fee: engineBayText.trim() === '' ? null : Number(engineBayText),
+    out_of_area_fee: outOfAreaText.trim() === '' ? null : Number(outOfAreaText),
+  });
+
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -137,6 +241,8 @@ export default function BookingForm({
       setEmail(initialData.email || '');
       setCarCount(initialData.car_count || 1);
       setPriceText(initialData.price != null ? String(initialData.price) : '');
+      setEngineBayText(initialData.engine_bay_fee != null ? String(initialData.engine_bay_fee) : '');
+      setOutOfAreaText(initialData.out_of_area_fee != null ? String(initialData.out_of_area_fee) : '');
       setAssignedDetailerId(initialData.assigned_detailer_id || '');
       setService(initialData.service || 'interior_silver');
       setLocation(initialData.service_location || 'mobile');
@@ -215,6 +321,8 @@ export default function BookingForm({
       // undefined would leave the column alone on edit; null clears it. An empty
       // field means "not quoted", which has to be storable.
       price: priceText.trim() === '' ? (null as any) : Number(priceText),
+      engine_bay_fee: engineBayText.trim() === '' ? null : Number(engineBayText),
+      out_of_area_fee: outOfAreaText.trim() === '' ? null : Number(outOfAreaText),
       assigned_detailer_id: assignedDetailerId || null,
       assigned_detailer:
         detailers.find((d) => d.id === assignedDetailerId)?.name ||
@@ -609,10 +717,52 @@ export default function BookingForm({
               </p>
             ) : (
               <p className="mt-1 text-[11px] text-charcoal-muted">
-                Total for all vehicles. Left blank, this job counts as $0 revenue.
+                Base price for all vehicles, before any extras below.
               </p>
             )}
           </div>
+        </div>
+
+        {/* Extras. Held as amounts rather than as ticks, so changing the standard
+            rate later cannot rewrite what an old job was billed. The running
+            total is shown because these ADD to the base price — seeing the sum
+            is what stops an extra being typed into the price and ticked here. */}
+        <div className="space-y-2">
+          <span className="block text-xs font-semibold uppercase tracking-wider text-charcoal">
+            Extras
+          </span>
+
+          <SurchargeRow
+            id="engine_bay_fee"
+            icon={Wrench}
+            label={SURCHARGE_LABELS.engine_bay}
+            hint={`Standard ${'$'}${ENGINE_BAY_FEE}`}
+            defaultAmount={ENGINE_BAY_FEE}
+            value={engineBayText}
+            onChange={setEngineBayText}
+          />
+
+          <SurchargeRow
+            id="out_of_area_fee"
+            icon={MapPinned}
+            label={SURCHARGE_LABELS.out_of_area}
+            hint={`Standard ${'$'}${OUT_OF_AREA_FEE}`}
+            defaultAmount={OUT_OF_AREA_FEE}
+            value={outOfAreaText}
+            onChange={setOutOfAreaText}
+          />
+
+          {liveTotal !== null && (
+            <div className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-sage-50 border border-sage-200">
+              <span className="text-xs font-semibold text-charcoal">Customer pays</span>
+              <span className="text-sm font-bold text-sage-800 tabular-nums">
+                {formatMoney(liveTotal)}
+              </span>
+            </div>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5">
 
           {/* Service Location: which channel the job runs through */}
           <div>

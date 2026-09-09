@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Booking, SERVICE_LOCATION_LABELS } from '@/types/booking';
+import { Booking, SERVICE_LOCATION_LABELS, bookingTotal } from '@/types/booking';
 import { Expense, EXPENSE_TYPE_LABELS, formatMoney } from '@/types/expense';
 import { getBookings, subscribeToBookings } from '@/lib/bookings';
 import {
@@ -181,8 +181,10 @@ export default function FinancePage() {
    * work is pipeline, and cancelled bookings still carry a price, so including
    * either would inflate profit against real expenses.
    */
+  // bookingTotal, not price: a job's revenue includes the engine bay and
+  // out-of-area surcharges, which are stored separately from the base price.
   const earned = useMemo(
-    () => bookings.filter((b) => b.status === 'completed' && b.price != null),
+    () => bookings.filter((b) => b.status === 'completed' && bookingTotal(b) != null),
     [bookings]
   );
 
@@ -234,7 +236,7 @@ export default function FinancePage() {
 
     earnedInRange.forEach((b) => {
       const row = ensure(periodKey(b.booking_date, bounds.granularity));
-      const amount = Number(b.price) || 0;
+      const amount = bookingTotal(b) || 0;
       if ((b.service_location || 'mobile') === 'shop') row.revenueShop += amount;
       else row.revenueMobile += amount;
     });

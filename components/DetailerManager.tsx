@@ -2,12 +2,34 @@
 
 import React, { useState } from 'react';
 import { Detailer, DETAILER_STATUS_LABELS, DETAILER_STATUS_STYLES } from '@/types/detailer';
-import { UserCheck, PlusCircle, AlertCircle, Loader2, Trash2, KeyRound, Link2Off } from 'lucide-react';
+import {
+  Availability,
+  DayOfWeek,
+  DAYS_OF_WEEK,
+  DAY_SHORT_LABELS,
+  formatScheduleTime,
+} from '@/types/availability';
+import {
+  UserCheck,
+  PlusCircle,
+  AlertCircle,
+  Loader2,
+  Trash2,
+  KeyRound,
+  Link2Off,
+  CalendarClock,
+  ChevronDown,
+} from 'lucide-react';
 import ConfirmModal from './ConfirmModal';
 
 interface DetailerManagerProps {
   detailers: Detailer[];
   assignedCounts: Record<string, number>;
+  /**
+   * Weekly hours per detailer, set by them in the detailer portal. Read-only
+   * here, and deliberately not consulted when assigning work.
+   */
+  availability: Record<string, Partial<Record<DayOfWeek, Availability>>>;
   onAdd: (name: string) => Promise<void>;
   onToggleStatus: (detailer: Detailer) => Promise<void>;
   onDelete: (detailer: Detailer) => Promise<void>;
@@ -22,6 +44,7 @@ interface DetailerManagerProps {
 export default function DetailerManager({
   detailers,
   assignedCounts,
+  availability,
   onAdd,
   onToggleStatus,
   onDelete,
@@ -38,6 +61,10 @@ export default function DetailerManager({
   const [linkingId, setLinkingId] = useState<string | null>(null);
   const [linkEmail, setLinkEmail] = useState('');
   const [linkError, setLinkError] = useState<string | null>(null);
+
+  // Which roster row has its weekly hours expanded. Collapsed by default so the
+  // roster stays as short as it was before this existed.
+  const [openScheduleId, setOpenScheduleId] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -176,6 +203,9 @@ export default function DetailerManager({
           {detailers.map((d) => {
             const isBusy = busyId === d.id;
             const count = assignedCounts[d.id] || 0;
+            const schedule = availability[d.id] || {};
+            const daysSet = DAYS_OF_WEEK.filter((day) => schedule[day]).length;
+            const isScheduleOpen = openScheduleId === d.id;
             return (
               <div
                 key={d.id}
@@ -296,6 +326,54 @@ export default function DetailerManager({
                       <KeyRound className="w-3 h-3" />
                       Link a portal login
                     </button>
+                  )}
+                </div>
+
+                {/* Weekly hours, set by the detailer in their own app. Shown
+                    here read-only: there is no edit control, and nothing on
+                    this page consults it when assigning work. */}
+                <div className="pt-2 border-t border-charcoal-border/40">
+                  <button
+                    type="button"
+                    onClick={() => setOpenScheduleId(isScheduleOpen ? null : d.id)}
+                    aria-expanded={isScheduleOpen}
+                    className="w-full flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold text-charcoal-muted hover:text-charcoal bg-charcoal-card hover:bg-sage-50 border border-charcoal-border/60 transition-colors"
+                  >
+                    <CalendarClock className="w-3 h-3 shrink-0" />
+                    <span>Weekly hours</span>
+                    <span className="text-charcoal-muted font-medium">
+                      {daysSet === 0
+                        ? '· not set yet'
+                        : `· ${daysSet} ${daysSet === 1 ? 'day' : 'days'}`}
+                    </span>
+                    <ChevronDown
+                      className={`w-3 h-3 ml-auto shrink-0 transition-transform ${isScheduleOpen ? 'rotate-180' : ''}`}
+                    />
+                  </button>
+
+                  {isScheduleOpen && (
+                    <dl className="mt-2 rounded-lg border border-charcoal-border/50 divide-y divide-charcoal-border/40 overflow-hidden">
+                      {DAYS_OF_WEEK.map((day) => {
+                        const slot = schedule[day];
+                        return (
+                          <div
+                            key={day}
+                            className="flex items-center justify-between gap-2 px-2.5 py-1.5 bg-charcoal-card"
+                          >
+                            <dt className="text-[11px] font-semibold text-charcoal w-10 shrink-0">
+                              {DAY_SHORT_LABELS[day]}
+                            </dt>
+                            <dd
+                              className={`text-[11px] tabular-nums ${slot ? 'text-charcoal' : 'text-charcoal-muted'}`}
+                            >
+                              {slot
+                                ? `${formatScheduleTime(slot.start_time)} – ${formatScheduleTime(slot.end_time)}`
+                                : 'Not working'}
+                            </dd>
+                          </div>
+                        );
+                      })}
+                    </dl>
                   )}
                 </div>
               </div>

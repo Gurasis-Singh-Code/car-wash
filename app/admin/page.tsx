@@ -20,6 +20,8 @@ import {
   linkDetailerLogin,
   unlinkDetailerLogin,
 } from '@/lib/detailers';
+import { Availability, DayOfWeek } from '@/types/availability';
+import { getAvailabilityByDetailer, subscribeToAvailability } from '@/lib/availability';
 import { useAuth } from '@/components/AuthProvider';
 import BookingForm, { BookingFormData } from '@/components/BookingForm';
 import BookingList from '@/components/BookingList';
@@ -31,6 +33,9 @@ export default function AdminPage() {
   const { isConfigured } = useAuth();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [detailers, setDetailers] = useState<Detailer[]>([]);
+  const [availability, setAvailability] = useState<
+    Record<string, Partial<Record<DayOfWeek, Availability>>>
+  >({});
   const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -57,11 +62,29 @@ export default function AdminPage() {
     }
   }, []);
 
+  // Weekly hours are display-only here. A failure to load them must not blank
+  // the roster or the booking list, so this reports into the same error banner
+  // but never throws past the roster load.
+  const loadAvailability = useCallback(async () => {
+    try {
+      setAvailability(await getAvailabilityByDetailer());
+    } catch (err: any) {
+      console.error('[AdminPage loadAvailability error]:', err);
+      setError(err?.message || 'Failed to load detailer hours from Supabase.');
+    }
+  }, []);
+
   useEffect(() => {
     loadDetailers();
     const unsubscribeDetailers = subscribeToDetailers(() => loadDetailers());
     return () => unsubscribeDetailers();
   }, [loadDetailers]);
+
+  useEffect(() => {
+    loadAvailability();
+    const unsubscribeAvailability = subscribeToAvailability(() => loadAvailability());
+    return () => unsubscribeAvailability();
+  }, [loadAvailability]);
 
   useEffect(() => {
     loadBookings();
@@ -304,6 +327,7 @@ export default function AdminPage() {
             <DetailerManager
               detailers={detailers}
               assignedCounts={assignedCounts}
+              availability={availability}
               onAdd={handleAddDetailer}
               onToggleStatus={handleToggleDetailerStatus}
               onDelete={handleDeleteDetailer}

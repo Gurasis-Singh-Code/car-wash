@@ -28,6 +28,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Clock3,
+  Hourglass,
   Phone,
   UserCheck,
   Filter,
@@ -568,10 +569,27 @@ export default function BookingList({
 
                       {/* Assigned Detailer */}
                       {booking.assigned_detailer && booking.assigned_detailer !== 'Unassigned' ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200/60">
-                          <UserCheck className="w-3 h-3 text-purple-600 shrink-0" />
-                          <span>{booking.assigned_detailer}</span>
-                        </span>
+                        <>
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200/60">
+                            <UserCheck className="w-3 h-3 text-purple-600 shrink-0" />
+                            <span>{booking.assigned_detailer}</span>
+                          </span>
+                          {/* Whether they have taken the job in the detailer
+                              portal. Only shown for detailers who actually have
+                              a login, so a roster-only assignment does not look
+                              like it is being ignored. */}
+                          {booking.assignment_status === 'accepted' ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-sage-100 text-sage-800 border border-sage-200/80">
+                              <CheckCircle2 className="w-3 h-3 text-sage-700 shrink-0" />
+                              <span>Accepted</span>
+                            </span>
+                          ) : booking.assignment_status === 'pending' ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-charcoal-surface text-charcoal-muted border border-charcoal-border/50">
+                              <Hourglass className="w-3 h-3 shrink-0" />
+                              <span>Awaiting reply</span>
+                            </span>
+                          ) : null}
+                        </>
                       ) : (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200/60">
                           <UserCheck className="w-3 h-3 text-amber-600 shrink-0" />

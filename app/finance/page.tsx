@@ -13,8 +13,19 @@ import {
   existingCategories,
   ExpenseInput,
 } from '@/lib/expenses';
+import { Detailer } from '@/types/detailer';
+import { Payout, PayoutStatus } from '@/types/payout';
+import { getDetailers } from '@/lib/detailers';
+import {
+  getPayouts,
+  addPayout,
+  updatePayoutStatus,
+  deletePayout,
+  PayoutInput,
+} from '@/lib/payouts';
 import { useAuth } from '@/components/AuthProvider';
 import ExpenseManager from '@/components/ExpenseManager';
+import PayoutManager from '@/components/PayoutManager';
 import {
   Wallet,
   RefreshCw,
@@ -73,6 +84,8 @@ export default function FinancePage() {
   const { isConfigured } = useAuth();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [detailers, setDetailers] = useState<Detailer[]>([]);
+  const [payouts, setPayouts] = useState<Payout[]>([]);
   const [period, setPeriod] = useState<Period>('month');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -80,9 +93,16 @@ export default function FinancePage() {
   const loadData = useCallback(async () => {
     try {
       setError(null);
-      const [b, e] = await Promise.all([getBookings(), getExpenses()]);
+      const [b, e, d, p] = await Promise.all([
+        getBookings(),
+        getExpenses(),
+        getDetailers(),
+        getPayouts(),
+      ]);
       setBookings(b);
       setExpenses(e);
+      setDetailers(d);
+      setPayouts(p);
     } catch (err: any) {
       console.error('[FinancePage loadData error]:', err);
       setError(err?.message || 'Failed to load finance data.');
@@ -211,6 +231,39 @@ export default function FinancePage() {
   );
 
   const categories = useMemo(() => existingCategories(expenses), [expenses]);
+
+  // Payouts sort by earning date, so a backdated entry has to be re-sorted
+  // rather than simply prepended.
+  const handleAddPayout = async (input: PayoutInput) => {
+    const created = await addPayout(input);
+    setPayouts((prev) =>
+      [created, ...prev].sort((a, b) => (a.earned_on < b.earned_on ? 1 : -1))
+    );
+  };
+
+  const handleTogglePayoutStatus = async (payout: Payout) => {
+    const next: PayoutStatus = payout.status === 'paid' ? 'pending' : 'paid';
+    const previous = [...payouts];
+    setPayouts((prev) => prev.map((p) => (p.id === payout.id ? { ...p, status: next } : p)));
+    try {
+      const updated = await updatePayoutStatus(payout.id, next);
+      setPayouts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+    } catch (err: any) {
+      setPayouts(previous);
+      setError(err?.message || 'Failed to update that payout.');
+    }
+  };
+
+  const handleDeletePayout = async (payout: Payout) => {
+    const previous = [...payouts];
+    setPayouts((prev) => prev.filter((p) => p.id !== payout.id));
+    try {
+      await deletePayout(payout.id);
+    } catch (err: any) {
+      setPayouts(previous);
+      setError(err?.message || 'Failed to delete that payout.');
+    }
+  };
 
   const handleAdd = async (data: ExpenseInput) => {
     const created = await addExpense(data);
@@ -592,6 +645,19 @@ export default function FinancePage() {
           </div>
         )}
       </section>
+
+      {/* Detailer pay. Kept out of the profit figures above on purpose: a payout
+          is a record of what someone is owed, and the cost of paying them is an
+          expense entry. Rolling one into the other would double count the moment
+          a wages expense is also recorded. */}
+      <PayoutManager
+        payouts={payouts}
+        detailers={detailers}
+        bookings={bookings}
+        onAdd={handleAddPayout}
+        onToggleStatus={handleTogglePayoutStatus}
+        onDelete={handleDeletePayout}
+      />
 
       {/* Manual expense entry */}
       <ExpenseManager

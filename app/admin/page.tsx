@@ -17,6 +17,8 @@ import {
   updateDetailerStatus,
   deleteDetailer,
   subscribeToDetailers,
+  linkDetailerLogin,
+  unlinkDetailerLogin,
 } from '@/lib/detailers';
 import { useAuth } from '@/components/AuthProvider';
 import BookingForm, { BookingFormData } from '@/components/BookingForm';
@@ -130,6 +132,18 @@ export default function AdminPage() {
     } catch (err: any) {
       setError(err?.message || 'Failed to update detailer status.');
     }
+  };
+
+  // Link / unlink throw on failure so DetailerManager can show the reason inline
+  // next to the row being edited, rather than in the page-level error banner.
+  const handleLinkDetailerLogin = async (detailer: Detailer, email: string) => {
+    const updated = await linkDetailerLogin(detailer.id, email);
+    setDetailers((prev) => prev.map((d) => (d.id === updated.id ? updated : d)));
+  };
+
+  const handleUnlinkDetailerLogin = async (detailer: Detailer) => {
+    const updated = await unlinkDetailerLogin(detailer.id);
+    setDetailers((prev) => prev.map((d) => (d.id === updated.id ? updated : d)));
   };
 
   const handleDeleteDetailer = async (detailer: Detailer) => {
@@ -293,6 +307,8 @@ export default function AdminPage() {
               onAdd={handleAddDetailer}
               onToggleStatus={handleToggleDetailerStatus}
               onDelete={handleDeleteDetailer}
+              onLinkLogin={handleLinkDetailerLogin}
+              onUnlinkLogin={handleUnlinkDetailerLogin}
             />
           </div>
         </div>

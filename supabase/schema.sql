@@ -451,3 +451,29 @@ alter publication supabase_realtime add table public.bookings;
 alter publication supabase_realtime add table public.leads;
 alter publication supabase_realtime add table public.detailers;
 alter publication supabase_realtime add table public.expenses;
+
+-- ==============================================================================
+-- DETAILER PORTAL — SEE supabase/migrations/20260909_detailer_portal.sql
+--
+-- IMPORTANT: the "Authenticated users full access" policies written above are no
+-- longer what is deployed. That migration replaced every one of them, because
+-- detailers now have logins in this same project and "authenticated" would have
+-- handed them every booking, lead and expense. What is live instead:
+--
+--   admins     - identified by a row in admin_users. Unrestricted, exactly as
+--                before, on every table.
+--   detailers  - identified by detailers.auth_user_id matching auth.uid().
+--                SELECT only, and only on: bookings assigned to them, their own
+--                detailers row, and their own detailer_payouts rows. No access
+--                at all to leads, expenses, notifications or content_posts.
+--
+-- It also adds:
+--   admin_users                    - the admin allow-list
+--   detailers.auth_user_id / email - the link to a portal login
+--   bookings.assignment_status     - pending / accepted, plus last_declined_by
+--   detailer_payouts               - the manual pay ledger the portal reads
+--   detailer_accept_booking()      - the only two writes a detailer can make
+--   detailer_decline_booking()       to a booking
+--
+-- Run that migration before creating any detailer login.
+-- ==============================================================================

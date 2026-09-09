@@ -7,6 +7,8 @@ function decodeDetailerFromDb(row: any): Detailer {
     name: row.name,
     status: row.status || 'active',
     created_at: row.created_at,
+    auth_user_id: row.auth_user_id ?? null,
+    email: row.email ?? null,
   };
 }
 
@@ -102,6 +104,51 @@ export async function deleteDetailer(id: string): Promise<void> {
     console.error('[Supabase deleteDetailer error]:', error.message);
     throw new Error(error.message);
   }
+}
+
+/**
+ * Point a detailer at the Supabase Auth account that signs into the detailer
+ * portal as them.
+ *
+ * The account itself is created in the Supabase dashboard, because that is the
+ * only place a password can be set without it passing through this app. This
+ * only does the lookup and the link, through an admin-guarded function, since
+ * auth.users is not readable with the anon key.
+ */
+export async function linkDetailerLogin(id: string, email: string): Promise<Detailer> {
+  if (!isSupabaseConfigured()) {
+    throw new Error('Supabase is not configured. Please set your credentials in .env.local');
+  }
+
+  const { data, error } = await supabase.rpc('admin_link_detailer_login', {
+    p_detailer_id: id,
+    p_email: email.trim(),
+  });
+
+  if (error) {
+    console.error('[Supabase linkDetailerLogin error]:', error.message);
+    throw new Error(error.message);
+  }
+
+  return decodeDetailerFromDb(data);
+}
+
+/** Revoke portal access without touching the roster entry or their bookings. */
+export async function unlinkDetailerLogin(id: string): Promise<Detailer> {
+  if (!isSupabaseConfigured()) {
+    throw new Error('Supabase is not configured. Please set your credentials in .env.local');
+  }
+
+  const { data, error } = await supabase.rpc('admin_unlink_detailer_login', {
+    p_detailer_id: id,
+  });
+
+  if (error) {
+    console.error('[Supabase unlinkDetailerLogin error]:', error.message);
+    throw new Error(error.message);
+  }
+
+  return decodeDetailerFromDb(data);
 }
 
 /** Realtime subscription, mirroring the bookings and leads channels. */

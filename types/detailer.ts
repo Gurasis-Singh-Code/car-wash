@@ -5,6 +5,14 @@ export interface Detailer {
   name: string;
   status: DetailerStatus;
   created_at: string;
+  /**
+   * The Supabase Auth account that signs into the detailer portal as this
+   * person. Null until an admin links one; a detailer with no login is still a
+   * perfectly valid roster entry that can be assigned bookings.
+   */
+  auth_user_id?: string | null;
+  /** The email of that login, kept here so the roster can show who is linked. */
+  email?: string | null;
 }
 
 export const DETAILER_STATUS_LABELS: Record<DetailerStatus, string> = {

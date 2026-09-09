@@ -11,6 +11,15 @@ export type ServiceType =
 export type BookingStatus = 'scheduled' | 'completed' | 'cancelled';
 
 /**
+ * Whether the assigned detailer has taken the job in the detailer portal.
+ *
+ * Separate from BookingStatus, which is the job's own lifecycle. Null means
+ * nobody is assigned - including after a decline, which hands the booking back
+ * to the unassigned queue rather than marking it rejected.
+ */
+export type AssignmentStatus = 'pending' | 'accepted';
+
+/**
  * Which channel the job runs through: a mobile visit or an in-shop appointment.
  * Distinct from `source`, which records how the booking was acquired.
  */
@@ -34,6 +43,11 @@ export interface Booking {
    * with that detailer name so existing name-based grouping keeps working.
    */
   assigned_detailer_id?: string | null;
+  /** Set by the detailer portal when they accept; reset on every reassignment. */
+  assignment_status?: AssignmentStatus | null;
+  /** Which detailer last handed this booking back, if any. */
+  last_declined_by?: string | null;
+  last_declined_at?: string | null;
   /** Quoted total, tax included. Written by the DM agent; the panel reads it. */
   price?: number;
   service: ServiceType;

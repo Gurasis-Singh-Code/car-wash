@@ -41,6 +41,9 @@ function decodeBookingFromDb(row: any): Booking {
     car_count,
     assigned_detailer,
     assigned_detailer_id: row.assigned_detailer_id || null,
+    assignment_status: row.assignment_status ?? null,
+    last_declined_by: row.last_declined_by ?? null,
+    last_declined_at: row.last_declined_at ?? null,
     price: row.price !== null && row.price !== undefined ? Number(row.price) : undefined,
     service: row.service,
     // Rows created before the shop channel existed have the column default.

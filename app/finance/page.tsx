@@ -13,6 +13,7 @@ import {
   existingCategories,
   ExpenseInput,
 } from '@/lib/expenses';
+import { expandExpenses, todayIso } from '@/lib/expenseOccurrences';
 import { Detailer } from '@/types/detailer';
 import { Payout, PayoutStatus } from '@/types/payout';
 import { getDetailers } from '@/lib/detailers';
@@ -39,7 +40,31 @@ import {
   PieChart,
 } from 'lucide-react';
 
-type Period = 'week' | 'month';
+/**
+ * The window every figure on this page is calculated over — the headline cards
+ * included. Previously the cards summed a rolling twelve periods, so switching
+ * Weekly to Monthly silently changed the headline from "last 12 weeks" to
+ * "last 12 months" without saying so, and neither was the period a person
+ * actually wanted to look at.
+ */
+type Range = 'this_week' | 'this_month' | 'last_3_months' | 'this_year' | 'all';
+
+/** How the trend chart buckets that window. Derived from the range, not chosen. */
+type Granularity = 'day' | 'week' | 'month';
+
+const RANGE_LABELS: Record<Range, string> = {
+  this_week: 'This week',
+  this_month: 'This month',
+  last_3_months: 'Last 3 months',
+  this_year: 'This year',
+  all: 'All time',
+};
+
+function toIsoDate(d: Date): string {
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${m}-${day}`;
+}
 
 /** Monday-based week key, matching how the rest of the panel treats weeks. */
 function weekKey(dateStr: string): string {
@@ -47,27 +72,57 @@ function weekKey(dateStr: string): string {
   const dt = new Date(y, m - 1, d);
   const dow = dt.getDay();
   dt.setDate(dt.getDate() + (dow === 0 ? -6 : 1 - dow));
-  const yy = dt.getFullYear();
-  const mm = String(dt.getMonth() + 1).padStart(2, '0');
-  const dd = String(dt.getDate()).padStart(2, '0');
-  return `${yy}-${mm}-${dd}`;
+  return toIsoDate(dt);
 }
 
-function monthKey(dateStr: string): string {
+function periodKey(dateStr: string, granularity: Granularity): string {
+  if (granularity === 'day') return dateStr;
+  if (granularity === 'week') return weekKey(dateStr);
   return dateStr.slice(0, 7);
 }
 
-function periodKey(dateStr: string, period: Period): string {
-  return period === 'week' ? weekKey(dateStr) : monthKey(dateStr);
-}
-
-function periodLabel(key: string, period: Period): string {
-  if (period === 'month') {
+function periodLabel(key: string, granularity: Granularity): string {
+  if (granularity === 'month') {
     const [y, m] = key.split('-').map(Number);
     return new Date(y, m - 1, 1).toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
   }
   const [y, m, d] = key.split('-').map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return new Date(y, m - 1, d).toLocaleDateString(
+    'en-US',
+    granularity === 'day' ? { weekday: 'short' } : { month: 'short', day: 'numeric' }
+  );
+}
+
+/**
+ * Start and end of a range, plus the bucket size the chart should use.
+ *
+ * Every range ends today rather than at the end of the calendar period, so
+ * "this month" means the month so far. Charging a full month of recurring costs
+ * against three weeks of revenue would show a loss that does not exist.
+ *
+ * `earliest` is the oldest date in the data, used only by All time.
+ */
+function rangeBounds(range: Range, earliest: string): { start: string; end: string; granularity: Granularity } {
+  const now = new Date();
+  const end = toIsoDate(now);
+
+  switch (range) {
+    case 'this_week': {
+      const dow = now.getDay();
+      const monday = new Date(now);
+      monday.setDate(now.getDate() + (dow === 0 ? -6 : 1 - dow));
+      return { start: toIsoDate(monday), end, granularity: 'day' };
+    }
+    case 'this_month':
+      return { start: toIsoDate(new Date(now.getFullYear(), now.getMonth(), 1)), end, granularity: 'week' };
+    case 'last_3_months':
+      return { start: toIsoDate(new Date(now.getFullYear(), now.getMonth() - 2, 1)), end, granularity: 'week' };
+    case 'this_year':
+      return { start: `${now.getFullYear()}-01-01`, end, granularity: 'month' };
+    case 'all':
+    default:
+      return { start: earliest, end, granularity: 'month' };
+  }
 }
 
 interface PeriodRow {
@@ -86,7 +141,7 @@ export default function FinancePage() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [detailers, setDetailers] = useState<Detailer[]>([]);
   const [payouts, setPayouts] = useState<Payout[]>([]);
-  const [period, setPeriod] = useState<Period>('month');
+  const [range, setRange] = useState<Range>('this_month');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -131,13 +186,42 @@ export default function FinancePage() {
     [bookings]
   );
 
+  /** Oldest date in the data, so All time starts where the records start. */
+  const earliest = useMemo(() => {
+    let oldest = todayIso();
+    earned.forEach((b) => {
+      if (b.booking_date < oldest) oldest = b.booking_date;
+    });
+    expenses.forEach((e) => {
+      if (e.date < oldest) oldest = e.date;
+    });
+    return oldest;
+  }, [earned, expenses]);
+
+  const bounds = useMemo(() => rangeBounds(range, earliest), [range, earliest]);
+
+  const earnedInRange = useMemo(
+    () => earned.filter((b) => b.booking_date >= bounds.start && b.booking_date <= bounds.end),
+    [earned, bounds]
+  );
+
+  /**
+   * Recurring expenses are expanded into the individual costs that landed in
+   * this window, so a $200/week ad spend counts four times in a month rather
+   * than once. Expansion stops at today, never in the future.
+   */
+  const occurrences = useMemo(
+    () => expandExpenses(expenses, bounds.start, bounds.end),
+    [expenses, bounds]
+  );
+
   const rows: PeriodRow[] = useMemo(() => {
     const map = new Map<string, PeriodRow>();
     const ensure = (key: string) => {
       if (!map.has(key)) {
         map.set(key, {
           key,
-          label: periodLabel(key, period),
+          label: periodLabel(key, bounds.granularity),
           revenueMobile: 0,
           revenueShop: 0,
           expenseMobile: 0,
@@ -148,22 +232,24 @@ export default function FinancePage() {
       return map.get(key)!;
     };
 
-    earned.forEach((b) => {
-      const row = ensure(periodKey(b.booking_date, period));
+    earnedInRange.forEach((b) => {
+      const row = ensure(periodKey(b.booking_date, bounds.granularity));
       const amount = Number(b.price) || 0;
       if ((b.service_location || 'mobile') === 'shop') row.revenueShop += amount;
       else row.revenueMobile += amount;
     });
 
-    expenses.forEach((e) => {
-      const row = ensure(periodKey(e.date, period));
-      if (e.service_location === 'shop') row.expenseShop += e.amount;
-      else if (e.service_location === 'mobile') row.expenseMobile += e.amount;
-      else row.expenseShared += e.amount;
+    occurrences.forEach((o) => {
+      const row = ensure(periodKey(o.date, bounds.granularity));
+      if (o.expense.service_location === 'shop') row.expenseShop += o.amount;
+      else if (o.expense.service_location === 'mobile') row.expenseMobile += o.amount;
+      else row.expenseShared += o.amount;
     });
 
-    return Array.from(map.values()).sort((a, b) => a.key.localeCompare(b.key)).slice(-12);
-  }, [earned, expenses, period]);
+    // No slice: the range itself decides the window now, so the chart shows the
+    // whole of what the headline cards are counting and the two cannot disagree.
+    return Array.from(map.values()).sort((a, b) => a.key.localeCompare(b.key));
+  }, [earnedInRange, occurrences, bounds]);
 
   const totals = useMemo(() => {
     const t = {
@@ -182,15 +268,14 @@ export default function FinancePage() {
       t.expenseShop += r.expenseShop;
       t.expenseShared += r.expenseShared;
     });
-    // Fixed / variable split is drawn from the same window the rows cover.
-    const windowKeys = new Set(rows.map((r) => r.key));
-    expenses.forEach((e) => {
-      if (!windowKeys.has(periodKey(e.date, period))) return;
-      if (e.type === 'fixed') t.expenseFixed += e.amount;
-      else t.expenseVariable += e.amount;
+    // Same occurrences the rows were built from, so the fixed / variable split
+    // always adds up to the Expenses card above it.
+    occurrences.forEach((o) => {
+      if (o.expense.type === 'fixed') t.expenseFixed += o.amount;
+      else t.expenseVariable += o.amount;
     });
     return t;
-  }, [rows, expenses, period]);
+  }, [rows, occurrences]);
 
   const revenueTotal = totals.revenueMobile + totals.revenueShop;
   const expenseTotal = totals.expenseMobile + totals.expenseShop + totals.expenseShared;
@@ -201,19 +286,17 @@ export default function FinancePage() {
   const profitShop = totals.revenueShop - totals.expenseShop;
 
   const categoryBreakdown = useMemo(() => {
-    const windowKeys = new Set(rows.map((r) => r.key));
     const map = new Map<string, number>();
-    expenses.forEach((e) => {
-      if (!windowKeys.has(periodKey(e.date, period))) return;
-      const k = e.category.trim() || 'Uncategorised';
-      map.set(k, (map.get(k) || 0) + e.amount);
+    occurrences.forEach((o) => {
+      const k = o.expense.category.trim() || 'Uncategorised';
+      map.set(k, (map.get(k) || 0) + o.amount);
     });
     const items = Array.from(map.entries())
       .map(([category, amount]) => ({ category, amount }))
       .sort((a, b) => b.amount - a.amount);
     const max = items.reduce((m, i) => Math.max(m, i.amount), 0);
     return { items, max };
-  }, [expenses, rows, period]);
+  }, [occurrences]);
 
   // Bars are scaled against the largest revenue-or-expense value in the window.
   const chartMax = useMemo(
@@ -284,17 +367,21 @@ export default function FinancePage() {
     }
   };
 
+  // Every card names the window it covers, so a figure can never be mistaken
+  // for an all-time total.
+  const rangeNote = RANGE_LABELS[range].toLowerCase();
+
   const statCards = [
     {
       title: 'Revenue · Mobile',
       value: formatMoney(totals.revenueMobile),
-      note: 'Completed mobile jobs',
+      note: `Completed mobile jobs · ${rangeNote}`,
       icon: Truck,
     },
     {
       title: 'Revenue · Shop',
       value: formatMoney(totals.revenueShop),
-      note: 'Completed in-shop jobs',
+      note: `Completed in-shop jobs · ${rangeNote}`,
       icon: Store,
     },
     {
@@ -306,7 +393,7 @@ export default function FinancePage() {
     {
       title: 'Profit',
       value: formatMoney(profitTotal),
-      note: 'Revenue minus all expenses',
+      note: `Revenue minus all expenses · ${rangeNote}`,
       icon: TrendingUp,
     },
   ];
@@ -338,20 +425,20 @@ export default function FinancePage() {
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin text-sage-600' : ''}`} />
           </button>
 
-          {/* Week / Month toggle */}
-          <div className="flex items-center gap-1.5 p-1 bg-canvas border border-charcoal-border/70 rounded-xl">
-            {(['week', 'month'] as const).map((p) => (
+          {/* Time range. Everything below is calculated over this window. */}
+          <div className="flex items-center gap-1 p-1 bg-canvas border border-charcoal-border/70 rounded-xl overflow-x-auto no-scrollbar">
+            {(Object.keys(RANGE_LABELS) as Range[]).map((r) => (
               <button
-                key={p}
+                key={r}
                 type="button"
-                onClick={() => setPeriod(p)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition-all ${
-                  period === p
+                onClick={() => setRange(r)}
+                className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap shrink-0 transition-all ${
+                  range === r
                     ? 'bg-sage-600 text-white dark:text-charcoal-card shadow-soft-xs'
                     : 'text-charcoal-muted hover:text-charcoal hover:bg-charcoal-card'
                 }`}
               >
-                {p === 'week' ? 'Weekly' : 'Monthly'}
+                {RANGE_LABELS[r]}
               </button>
             ))}
           </div>
@@ -513,7 +600,8 @@ export default function FinancePage() {
                 Revenue vs Expenses
               </h2>
               <p className="text-[11px] sm:text-xs text-charcoal-muted">
-                Last {rows.length} {period === 'week' ? 'weeks' : 'months'} with activity.
+                {RANGE_LABELS[range]}, by{' '}
+                {bounds.granularity === 'day' ? 'day' : bounds.granularity === 'week' ? 'week' : 'month'}.
               </p>
             </div>
           </div>

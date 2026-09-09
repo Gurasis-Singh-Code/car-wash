@@ -1,12 +1,16 @@
 import { supabase, isSupabaseConfigured } from './supabase';
-import { Expense, ExpenseType } from '@/types/expense';
+import { Expense, ExpenseRecurrence, ExpenseType } from '@/types/expense';
 import { ServiceLocation } from '@/types/booking';
 
 export interface ExpenseInput {
   category: string;
   type: ExpenseType;
   amount: number;
+  /** First occurrence for a recurring expense; the only one otherwise. */
   date: string;
+  recurrence: ExpenseRecurrence;
+  /** Empty or null means it keeps repeating. Ignored when recurrence is 'none'. */
+  recurrence_end?: string | null;
   /** Omit or pass null for shared overhead. */
   service_location?: ServiceLocation | null;
   notes?: string;
@@ -19,6 +23,9 @@ function decodeExpenseFromDb(row: any): Expense {
     type: row.type || 'variable',
     amount: Number(row.amount || 0),
     date: row.date,
+    // Rows created before recurrence existed have the column default.
+    recurrence: row.recurrence || 'none',
+    recurrence_end: row.recurrence_end || undefined,
     service_location: row.service_location || undefined,
     notes: row.notes || undefined,
     created_at: row.created_at,
@@ -56,11 +63,23 @@ function toPayload(data: ExpenseInput) {
     throw new Error('Amount must be a positive number.');
   }
 
+  const recurrence = data.recurrence || 'none';
+  // An end date only means anything for something that repeats. Clearing it
+  // alongside the recurrence stops a stale bound being left on a one-off, where
+  // the database CHECK would then reject an otherwise valid edit.
+  const recurrenceEnd = recurrence === 'none' ? null : data.recurrence_end || null;
+
+  if (recurrenceEnd && recurrenceEnd < data.date) {
+    throw new Error('The repeat end date cannot be before the first date.');
+  }
+
   return {
     category,
     type: data.type,
     amount,
     date: data.date,
+    recurrence,
+    recurrence_end: recurrenceEnd,
     // Empty string from a <select> means shared, which is stored as null.
     service_location: data.service_location || null,
     notes: data.notes?.trim() || null,

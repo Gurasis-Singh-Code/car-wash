@@ -4,8 +4,11 @@ import React, { useState } from 'react';
 import {
   Expense,
   ExpenseType,
+  ExpenseRecurrence,
   EXPENSE_TYPE_LABELS,
   EXPENSE_TYPE_STYLES,
+  EXPENSE_RECURRENCE_LABELS,
+  EXPENSE_RECURRENCE_STYLES,
   formatMoney,
 } from '@/types/expense';
 import { ServiceLocation, SERVICE_LOCATION_LABELS } from '@/types/booking';
@@ -23,6 +26,7 @@ import {
   Calendar,
   Truck,
   Store,
+  Repeat,
 } from 'lucide-react';
 
 interface ExpenseManagerProps {
@@ -33,11 +37,24 @@ interface ExpenseManagerProps {
   onDelete: (id: string) => Promise<void>;
 }
 
+/**
+ * Local calendar date, not `toISOString()` — that returns UTC, so late in the
+ * evening west of Greenwich it defaults the form to tomorrow.
+ */
+function todayLocalIso(): string {
+  const now = new Date();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  return `${now.getFullYear()}-${m}-${d}`;
+}
+
 const EMPTY: ExpenseInput = {
   category: '',
   type: 'variable',
   amount: 0,
-  date: new Date().toISOString().split('T')[0],
+  date: todayLocalIso(),
+  recurrence: 'none',
+  recurrence_end: null,
   service_location: null,
   notes: '',
 };
@@ -62,7 +79,7 @@ export default function ExpenseManager({
   const [deleting, setDeleting] = useState<Expense | null>(null);
 
   const resetForm = () => {
-    setForm({ ...EMPTY, date: new Date().toISOString().split('T')[0] });
+    setForm({ ...EMPTY, date: todayLocalIso() });
     setAmountText('');
     setEditingId(null);
     setError(null);
@@ -75,6 +92,8 @@ export default function ExpenseManager({
       type: e.type,
       amount: e.amount,
       date: e.date,
+      recurrence: e.recurrence,
+      recurrence_end: e.recurrence_end || null,
       service_location: e.service_location || null,
       notes: e.notes || '',
     });
@@ -260,7 +279,74 @@ export default function ExpenseManager({
                 className="w-full pl-10 pr-3.5 py-2.5 rounded-xl text-base sm:text-sm bg-canvas border border-charcoal-border text-charcoal focus:border-sage-500 focus:bg-charcoal-card transition-colors"
               />
             </div>
+            {form.recurrence !== 'none' && (
+              <p className="text-[11px] text-charcoal-muted mt-1">First charge. It repeats from here.</p>
+            )}
           </div>
+
+          {/* Repeats. A recurring cost is one row that the finance figures
+              expand, so correcting the amount corrects every occurrence. */}
+          <div>
+            <label
+              htmlFor="expense_recurrence"
+              className="block text-xs font-semibold uppercase tracking-wider text-charcoal mb-1.5"
+            >
+              Repeats
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-charcoal-muted">
+                <Repeat className="w-4 h-4 text-sage-600" />
+              </div>
+              <select
+                id="expense_recurrence"
+                value={form.recurrence}
+                onChange={(ev) =>
+                  setForm({
+                    ...form,
+                    recurrence: ev.target.value as ExpenseRecurrence,
+                    // Clearing the bound alongside the recurrence stops a stale
+                    // end date sitting on a one-off.
+                    recurrence_end: ev.target.value === 'none' ? null : form.recurrence_end,
+                  })
+                }
+                className="w-full pl-10 pr-3.5 py-2.5 rounded-xl text-base sm:text-sm bg-canvas border border-charcoal-border text-charcoal focus:border-sage-500 focus:bg-charcoal-card transition-colors appearance-none"
+              >
+                <option value="none">{EXPENSE_RECURRENCE_LABELS.none}</option>
+                <option value="weekly">{EXPENSE_RECURRENCE_LABELS.weekly}</option>
+                <option value="monthly">{EXPENSE_RECURRENCE_LABELS.monthly}</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Only meaningful for something that repeats. */}
+          {form.recurrence !== 'none' && (
+            <div>
+              <label
+                htmlFor="expense_recurrence_end"
+                className="block text-xs font-semibold uppercase tracking-wider text-charcoal mb-1.5"
+              >
+                Repeat until
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-charcoal-muted">
+                  <Calendar className="w-4 h-4 text-sage-600" />
+                </div>
+                <input
+                  id="expense_recurrence_end"
+                  type="date"
+                  value={form.recurrence_end || ''}
+                  min={form.date}
+                  onChange={(ev) =>
+                    setForm({ ...form, recurrence_end: ev.target.value || null })
+                  }
+                  className="w-full pl-10 pr-3.5 py-2.5 rounded-xl text-base sm:text-sm bg-canvas border border-charcoal-border text-charcoal focus:border-sage-500 focus:bg-charcoal-card transition-colors"
+                />
+              </div>
+              <p className="text-[11px] text-charcoal-muted mt-1">
+                Leave empty if it is ongoing. Nothing is counted past today either way.
+              </p>
+            </div>
+          )}
         </div>
 
         <div>
@@ -350,6 +436,22 @@ export default function ExpenseManager({
                   >
                     {EXPENSE_TYPE_LABELS[e.type]}
                   </span>
+
+                  {/* Only shown when it repeats — a "One-off" tag on almost
+                      every row would be noise. */}
+                  {e.recurrence !== 'none' && (
+                    <span
+                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${EXPENSE_RECURRENCE_STYLES[e.recurrence]}`}
+                      title={
+                        e.recurrence_end
+                          ? `Repeats ${EXPENSE_RECURRENCE_LABELS[e.recurrence].toLowerCase()} until ${e.recurrence_end}`
+                          : `Repeats ${EXPENSE_RECURRENCE_LABELS[e.recurrence].toLowerCase()}, ongoing`
+                      }
+                    >
+                      <Repeat className="w-3 h-3 shrink-0" />
+                      {EXPENSE_RECURRENCE_LABELS[e.recurrence]}
+                    </span>
+                  )}
 
                   {scope !== 'shared' && (
                     <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-charcoal-surface text-charcoal-muted border border-charcoal-border/50">

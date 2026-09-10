@@ -42,6 +42,7 @@ function decodeBookingFromDb(row: any): Booking {
     assigned_detailer,
     assigned_detailer_id: row.assigned_detailer_id || null,
     assignment_status: row.assignment_status ?? null,
+    offered_at: row.offered_at ?? null,
     last_declined_by: row.last_declined_by ?? null,
     last_declined_at: row.last_declined_at ?? null,
     price: row.price !== null && row.price !== undefined ? Number(row.price) : undefined,

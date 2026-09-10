@@ -27,6 +27,7 @@ import BookingForm, { BookingFormData } from '@/components/BookingForm';
 import BookingList from '@/components/BookingList';
 import EditBookingModal from '@/components/EditBookingModal';
 import DetailerManager from '@/components/DetailerManager';
+import UnclaimedAlert from '@/components/UnclaimedAlert';
 import { ShieldCheck, RefreshCw, AlertCircle, Sparkles } from 'lucide-react';
 
 export default function AdminPage() {
@@ -309,6 +310,10 @@ export default function AdminPage() {
           </div>
         </div>
       )}
+
+      {/* Same alert as the dashboard, without the link: the unassigned queue is
+          already on this page. */}
+      <UnclaimedAlert bookings={bookings} showLink={false} />
 
       {/* Error alert */}
       {error && (

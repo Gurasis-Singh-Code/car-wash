@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { Booking, BookingStats } from '@/types/booking';
 import { getStats, getUpcomingBookings, subscribeToBookings } from '@/lib/bookings';
+import UnclaimedAlert from '@/components/UnclaimedAlert';
 import { useAuth } from '@/components/AuthProvider';
 import StatCardsGrid from '@/components/StatCard';
 import BookingList from '@/components/BookingList';
@@ -223,6 +224,9 @@ export default function HomePage() {
           </Link>
         </div>
       </div>
+
+      {/* Jobs the open board has not resolved on its own. */}
+      <UnclaimedAlert bookings={bookings} />
 
       {/* Notice if Supabase not configured */}
       {!isConfigured && (

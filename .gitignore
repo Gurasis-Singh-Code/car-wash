@@ -11,3 +11,10 @@ dist
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Local-only: names the Supabase project, the n8n instance and real revenue.
+# This repo is public.
+HANDOVER.md
+
+# Local editor/tool config
+.claude/

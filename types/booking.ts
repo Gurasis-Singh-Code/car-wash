@@ -45,6 +45,11 @@ export interface Booking {
   assigned_detailer_id?: string | null;
   /** Set by the detailer portal when they accept; reset on every reassignment. */
   assignment_status?: AssignmentStatus | null;
+  /**
+   * When this job went onto the open board for detailers to claim. Null once
+   * somebody holds it. The clock behind the "unclaimed for two hours" alert.
+   */
+  offered_at?: string | null;
   /** Which detailer last handed this booking back, if any. */
   last_declined_by?: string | null;
   last_declined_at?: string | null;

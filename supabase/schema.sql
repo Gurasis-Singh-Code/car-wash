@@ -65,7 +65,7 @@ create type car_type as enum ('sedan','hatchback','suv','van','mini_truck','othe
 -- BOOKABLE_SERVICES in types/booking.ts, but the value stays so the bookings
 -- already using it keep rendering.
 create type service_type as enum (
-  'interior_silver','interior_gold','full_silver','full_gold',
+  'interior_silver','interior_gold','interior_titanium','full_silver','full_gold','full_titanium',
   'tint','ceramic_tint','nano_ceramic_tint'
 );
 

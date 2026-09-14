@@ -2,8 +2,10 @@ export type CarType = 'sedan' | 'hatchback' | 'suv' | 'van' | 'mini_truck' | 'ot
 export type ServiceType =
   | 'interior_silver'
   | 'interior_gold'
+  | 'interior_titanium'
   | 'full_silver'
   | 'full_gold'
+  | 'full_titanium'
   | 'ceramic_tint'
   | 'nano_ceramic_tint'
   | 'interior'
@@ -119,8 +121,10 @@ export function bookingTotal(booking: {
 export const SERVICE_LABELS: Record<string, string> = {
   interior_silver: 'Interior Silver',
   interior_gold: 'Interior Gold',
+  interior_titanium: 'Interior Titanium',
   full_silver: 'Full Silver',
   full_gold: 'Full Gold',
+  full_titanium: 'Full Titanium',
   ceramic_tint: 'Ceramic Tint',
   nano_ceramic_tint: 'Nano Ceramic Tint',
   interior: 'Interior Detailing',
@@ -142,8 +146,10 @@ export const SERVICE_LOCATION_LABELS: Record<ServiceLocation, string> = {
 export const BOOKABLE_SERVICES: ServiceType[] = [
   'interior_silver',
   'interior_gold',
+  'interior_titanium',
   'full_silver',
   'full_gold',
+  'full_titanium',
   'ceramic_tint',
   'nano_ceramic_tint',
 ];

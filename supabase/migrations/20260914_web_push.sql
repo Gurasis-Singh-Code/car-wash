@@ -143,7 +143,7 @@ begin
   insert into notifications (booking_id, type, status, message, error)
   values (
     p_booking_id, 'job_offered',
-    case when p_total = 0 then 'skipped' when p_sent > 0 then 'sent' else 'failed' end,
+    (case when p_total = 0 then 'skipped' when p_sent > 0 then 'sent' else 'failed' end)::notification_status,
     p_message,
     case when p_total = 0 then 'No detailer has notifications turned on'
          else 'sent ' || p_sent || '/' || p_total

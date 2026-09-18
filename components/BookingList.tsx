@@ -4,11 +4,8 @@ import React, { useState, useMemo } from 'react';
 import {
   Booking,
   SERVICE_LABELS,
-  CAR_TYPE_LABELS,
   STATUS_LABELS,
   BookingStatus,
-  ServiceLocation,
-  SERVICE_LOCATION_LABELS,
   serviceCardAccent,
   serviceBadgeAccent,
   bookingTotal,
@@ -43,8 +40,6 @@ import {
   Loader2,
   Instagram,
   Mail,
-  Truck,
-  Store,
   UserPlus,
 } from 'lucide-react';
 
@@ -55,8 +50,6 @@ interface BookingListProps {
   emptyMessage?: string;
   showActions?: boolean;
   showStatusFilter?: boolean;
-  /** Adds Mobile / Shop channel tabs above the status tabs. */
-  showLocationFilter?: boolean;
   /** Adds All / Assigned / Unassigned tabs - the unassigned queue. */
   showAssignmentFilter?: boolean;
   /** Active detailers offered in each card's assignment dropdown. */
@@ -74,7 +67,6 @@ export default function BookingList({
   emptyMessage = 'No bookings scheduled yet',
   showActions = false,
   showStatusFilter = false,
-  showLocationFilter = false,
   showAssignmentFilter = false,
   detailers = [],
   onAssignDetailer,
@@ -84,29 +76,12 @@ export default function BookingList({
 }: BookingListProps) {
   const [deletingBooking, setDeletingBooking] = useState<Booking | null>(null);
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<BookingStatus | 'all'>('all');
-  const [selectedLocationFilter, setSelectedLocationFilter] = useState<ServiceLocation | 'all'>('all');
   const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
   const [selectedAssignmentFilter, setSelectedAssignmentFilter] = useState<'all' | 'assigned' | 'unassigned'>('all');
   const [assigningId, setAssigningId] = useState<string | null>(null);
 
-  // Channel scope is applied first, so the status counts below describe the
-  // channel currently being viewed rather than the whole list.
-  const locationScoped = useMemo(
-    () =>
-      selectedLocationFilter === 'all'
-        ? bookings
-        : bookings.filter((b) => (b.service_location || 'mobile') === selectedLocationFilter),
-    [bookings, selectedLocationFilter]
-  );
-
-  const locationCounts = useMemo(() => {
-    const counts = { all: bookings.length, mobile: 0, shop: 0 };
-    bookings.forEach((b) => {
-      if ((b.service_location || 'mobile') === 'shop') counts.shop += 1;
-      else counts.mobile += 1;
-    });
-    return counts;
-  }, [bookings]);
+  // Everything is mobile now, so there is no channel scope: the list is the list.
+  const locationScoped = bookings;
 
   const assignmentScoped = useMemo(() => {
     if (selectedAssignmentFilter === 'all') return locationScoped;
@@ -265,64 +240,6 @@ export default function BookingList({
               {filteredBookings.length} of {bookings.length} {bookings.length === 1 ? 'appointment' : 'appointments'}
             </div>
           )}
-        </div>
-      )}
-
-      {/* Channel Filter Tabs (All / Mobile / Shop) */}
-      {showLocationFilter && (
-        <div className="flex items-center gap-1.5 p-1 bg-canvas border border-charcoal-border/70 rounded-2xl overflow-x-auto shadow-soft-xs">
-          <button
-            type="button"
-            onClick={() => setSelectedLocationFilter('all')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
-              selectedLocationFilter === 'all'
-                ? 'bg-charcoal-card text-charcoal shadow-soft-xs border border-charcoal-border/80'
-                : 'text-charcoal-muted hover:text-charcoal hover:bg-charcoal-card/60'
-            }`}
-          >
-            <span>All</span>
-            <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-              selectedLocationFilter === 'all' ? 'bg-sage-100 text-sage-800' : 'bg-charcoal-border/40 text-charcoal-muted'
-            }`}>
-              {locationCounts.all}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setSelectedLocationFilter('mobile')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
-              selectedLocationFilter === 'mobile'
-                ? 'bg-sage-100 text-sage-900 shadow-soft-xs border border-sage-300'
-                : 'text-charcoal-muted hover:text-sage-800 hover:bg-sage-50/70'
-            }`}
-          >
-            <Truck className="w-3 h-3 text-sage-700" />
-            <span>{SERVICE_LOCATION_LABELS.mobile}</span>
-            <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-              selectedLocationFilter === 'mobile' ? 'bg-sage-200 text-sage-900' : 'bg-charcoal-border/40 text-charcoal-muted'
-            }`}>
-              {locationCounts.mobile}
-            </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setSelectedLocationFilter('shop')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
-              selectedLocationFilter === 'shop'
-                ? 'bg-sage-100 text-sage-900 shadow-soft-xs border border-sage-300'
-                : 'text-charcoal-muted hover:text-sage-800 hover:bg-sage-50/70'
-            }`}
-          >
-            <Store className="w-3 h-3 text-sage-700" />
-            <span>{SERVICE_LOCATION_LABELS.shop}</span>
-            <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-              selectedLocationFilter === 'shop' ? 'bg-sage-200 text-sage-900' : 'bg-charcoal-border/40 text-charcoal-muted'
-            }`}>
-              {locationCounts.shop}
-            </span>
-          </button>
         </div>
       )}
 
@@ -564,14 +481,18 @@ export default function BookingList({
                         {SERVICE_LABELS[booking.service] || booking.service}
                       </span>
 
-                      {/* Vehicle Type & Count */}
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-charcoal-surface text-charcoal-muted border border-charcoal-border/50">
-                        <Car className="w-3 h-3 text-charcoal-muted shrink-0" />
-                        <span>
-                          {booking.car_count && booking.car_count > 1 ? `${booking.car_count}x ` : ''}
-                          {CAR_TYPE_LABELS[booking.car_type] || booking.car_type}
+                      {/* Vehicle: make/model when the customer gave it, and the
+                          count when there is more than one. Type is no longer
+                          collected, so an older booking's type is not shown. */}
+                      {(booking.vehicle_make_model || (booking.car_count ?? 1) > 1) && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-charcoal-surface text-charcoal-muted border border-charcoal-border/50">
+                          <Car className="w-3 h-3 text-charcoal-muted shrink-0" />
+                          <span>
+                            {booking.car_count && booking.car_count > 1 ? `${booking.car_count}x ` : ''}
+                            {booking.vehicle_make_model || 'vehicles'}
+                          </span>
                         </span>
-                      </span>
+                      )}
 
                       {/* Quoted price, tax included. Shown as a distinct chip
                           rather than another grey pill because it is the field

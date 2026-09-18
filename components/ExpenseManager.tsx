@@ -11,7 +11,6 @@ import {
   EXPENSE_RECURRENCE_STYLES,
   formatMoney,
 } from '@/types/expense';
-import { ServiceLocation, SERVICE_LOCATION_LABELS } from '@/types/booking';
 import { ExpenseInput } from '@/lib/expenses';
 import ConfirmModal from './ConfirmModal';
 import {
@@ -24,8 +23,6 @@ import {
   X,
   Tag,
   Calendar,
-  Truck,
-  Store,
   Repeat,
 } from 'lucide-react';
 
@@ -147,7 +144,6 @@ export default function ExpenseManager({
     }
   };
 
-  const scopeOf = (e: Expense) => e.service_location || 'shared';
 
   return (
     <div className="bg-charcoal-card rounded-2xl p-4 sm:p-5 border border-charcoal-border/60 shadow-soft-sm space-y-4">
@@ -231,31 +227,6 @@ export default function ExpenseManager({
             >
               <option value="variable">{EXPENSE_TYPE_LABELS.variable}</option>
               <option value="fixed">{EXPENSE_TYPE_LABELS.fixed}</option>
-            </select>
-          </div>
-
-          {/* Attribution. Blank means shared overhead, never split automatically. */}
-          <div>
-            <label
-              htmlFor="expense_location"
-              className="block text-xs font-semibold uppercase tracking-wider text-charcoal mb-1.5"
-            >
-              Applies To
-            </label>
-            <select
-              id="expense_location"
-              value={form.service_location || ''}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  service_location: (e.target.value || null) as ServiceLocation | null,
-                })
-              }
-              className="w-full px-3.5 py-2.5 rounded-xl text-base sm:text-sm bg-canvas border border-charcoal-border text-charcoal focus:border-sage-500 focus:bg-charcoal-card transition-colors cursor-pointer"
-            >
-              <option value="">Shared (both)</option>
-              <option value="mobile">{SERVICE_LOCATION_LABELS.mobile}</option>
-              <option value="shop">{SERVICE_LOCATION_LABELS.shop}</option>
             </select>
           </div>
 
@@ -417,7 +388,6 @@ export default function ExpenseManager({
         ) : (
           <div className="space-y-2 max-h-80 overflow-y-auto">
             {expenses.map((e) => {
-              const scope = scopeOf(e);
               return (
                 <div
                   key={e.id}
@@ -450,13 +420,6 @@ export default function ExpenseManager({
                     >
                       <Repeat className="w-3 h-3 shrink-0" />
                       {EXPENSE_RECURRENCE_LABELS[e.recurrence]}
-                    </span>
-                  )}
-
-                  {scope !== 'shared' && (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-charcoal-surface text-charcoal-muted border border-charcoal-border/50">
-                      {scope === 'mobile' ? <Truck className="w-3 h-3" /> : <Store className="w-3 h-3" />}
-                      <span>{SERVICE_LOCATION_LABELS[scope as ServiceLocation]}</span>
                     </span>
                   )}
 

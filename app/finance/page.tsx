@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Booking, SERVICE_LOCATION_LABELS, bookingTotal } from '@/types/booking';
+import { Booking, bookingTotal } from '@/types/booking';
 import { Expense, EXPENSE_TYPE_LABELS, formatMoney } from '@/types/expense';
 import { getBookings, subscribeToBookings } from '@/lib/bookings';
 import {
@@ -34,8 +34,6 @@ import {
   Sparkles,
   TrendingUp,
   TrendingDown,
-  Truck,
-  Store,
   BarChart3,
   PieChart,
 } from 'lucide-react';
@@ -284,8 +282,6 @@ export default function FinancePage() {
   const profitTotal = revenueTotal - expenseTotal;
   // Per-location profit subtracts only that location's own expenses. Shared
   // overhead is deliberately NOT apportioned — it is reported on its own line.
-  const profitMobile = totals.revenueMobile - totals.expenseMobile;
-  const profitShop = totals.revenueShop - totals.expenseShop;
 
   const categoryBreakdown = useMemo(() => {
     const map = new Map<string, number>();
@@ -375,16 +371,10 @@ export default function FinancePage() {
 
   const statCards = [
     {
-      title: 'Revenue · Mobile',
-      value: formatMoney(totals.revenueMobile),
-      note: `Completed mobile jobs · ${rangeNote}`,
-      icon: Truck,
-    },
-    {
-      title: 'Revenue · Shop',
-      value: formatMoney(totals.revenueShop),
-      note: `Completed in-shop jobs · ${rangeNote}`,
-      icon: Store,
+      title: 'Revenue',
+      value: formatMoney(revenueTotal),
+      note: `Completed jobs · ${rangeNote}`,
+      icon: Wallet,
     },
     {
       title: 'Expenses',
@@ -470,7 +460,7 @@ export default function FinancePage() {
 
       {/* Headline figures */}
       <section aria-label="Finance Summary">
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-6">
           {statCards.map((card) => {
             const Icon = card.icon;
             return (
@@ -501,93 +491,6 @@ export default function FinancePage() {
       </section>
 
       {/* Profit by location */}
-      <section
-        aria-label="Profit by Location"
-        className="bg-charcoal-card rounded-2xl p-4 sm:p-5 border border-charcoal-border/60 shadow-soft-sm space-y-3.5"
-      >
-        <div className="flex items-center gap-2 pb-3 border-b border-charcoal-border/40">
-          <div className="w-8 h-8 rounded-xl bg-sage-100 text-sage-800 flex items-center justify-center shrink-0">
-            <Wallet className="w-4 h-4 text-sage-700" />
-          </div>
-          <div>
-            <h2 className="text-sm sm:text-base font-bold text-charcoal tracking-tight">
-              Profit by Location
-            </h2>
-            <p className="text-[11px] sm:text-xs text-charcoal-muted">
-              Each location carries only its own tagged expenses. Shared overhead is listed
-              separately and counted once in the combined figure.
-            </p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {[
-            {
-              label: SERVICE_LOCATION_LABELS.mobile,
-              revenue: totals.revenueMobile,
-              expense: totals.expenseMobile,
-              profit: profitMobile,
-              icon: Truck,
-            },
-            {
-              label: SERVICE_LOCATION_LABELS.shop,
-              revenue: totals.revenueShop,
-              expense: totals.expenseShop,
-              profit: profitShop,
-              icon: Store,
-            },
-          ].map((loc) => {
-            const Icon = loc.icon;
-            return (
-              <div key={loc.label} className="rounded-xl border border-charcoal-border/60 bg-canvas p-3 space-y-1.5">
-                <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-charcoal-muted">
-                  <Icon className="w-3.5 h-3.5 text-sage-600" />
-                  <span>{loc.label}</span>
-                </div>
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-charcoal-muted">Revenue</span>
-                  <span className="font-semibold text-charcoal">{formatMoney(loc.revenue)}</span>
-                </div>
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-charcoal-muted">Expenses</span>
-                  <span className="font-semibold text-charcoal">−{formatMoney(loc.expense)}</span>
-                </div>
-                <div className="flex items-center justify-between text-sm pt-1.5 border-t border-charcoal-border/40">
-                  <span className="font-semibold text-charcoal">Profit</span>
-                  <span
-                    className={`font-bold ${loc.profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}
-                  >
-                    {formatMoney(loc.profit)}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-
-          <div className="rounded-xl border border-charcoal-border/60 bg-canvas p-3 space-y-1.5">
-            <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-charcoal-muted">
-              <Wallet className="w-3.5 h-3.5 text-sage-600" />
-              <span>Combined</span>
-            </div>
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-charcoal-muted">Revenue</span>
-              <span className="font-semibold text-charcoal">{formatMoney(revenueTotal)}</span>
-            </div>
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-charcoal-muted">Shared overhead</span>
-              <span className="font-semibold text-charcoal">−{formatMoney(totals.expenseShared)}</span>
-            </div>
-            <div className="flex items-center justify-between text-sm pt-1.5 border-t border-charcoal-border/40">
-              <span className="font-semibold text-charcoal">Profit</span>
-              <span className={`font-bold ${profitTotal >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                {formatMoney(profitTotal)}
-              </span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Trend chart */}
       <section
         aria-label="Revenue and Expense Trend"
         className="bg-charcoal-card rounded-2xl p-4 sm:p-5 border border-charcoal-border/60 shadow-soft-sm space-y-3.5"

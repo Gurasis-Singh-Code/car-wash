@@ -350,7 +350,6 @@ export default function AdminPage() {
             subtitle="Full appointment directory with quick status toggles and controls"
             emptyMessage="No bookings scheduled yet"
             showActions={true}
-            showLocationFilter={true}
             showAssignmentFilter={true}
             detailers={activeDetailers}
             onAssignDetailer={handleAssignDetailer}

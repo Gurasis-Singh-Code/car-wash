@@ -6,7 +6,6 @@ import {
   Booking,
   BookingStatus,
   SERVICE_LABELS,
-  CAR_TYPE_LABELS,
   serviceCardAccent,
   serviceRowAccent,
 } from '@/types/booking';
@@ -472,24 +471,6 @@ export default function OverviewPage() {
       }))
       .sort((a, b) => b.total - a.total);
   }, [currentPeriodBookings]);
-
-  // Distribution by Car Type
-  const carTypeDistribution = useMemo(() => {
-    const counts: Record<string, number> = {};
-    currentPeriodBookings.forEach((b) => {
-      const ct = b.car_type || 'sedan';
-      counts[ct] = (counts[ct] || 0) + (b.car_count || 1);
-    });
-
-    return Object.entries(counts)
-      .map(([typeKey, count]) => ({
-        key: typeKey,
-        label: CAR_TYPE_LABELS[typeKey as keyof typeof CAR_TYPE_LABELS] || typeKey,
-        count,
-        percentage: metrics.totalCars > 0 ? Math.round((count / metrics.totalCars) * 100) : 0,
-      }))
-      .sort((a, b) => b.count - a.count);
-  }, [currentPeriodBookings, metrics.totalCars]);
 
   // Daily / Time-Series Performance Chart Data
   const timeSeriesData = useMemo(() => {
@@ -1297,8 +1278,9 @@ export default function OverviewPage() {
         </div>
       </div>
 
-      {/* Secondary Breakdowns: Service Packages & Vehicle Types */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+      {/* Service package popularity. Vehicle type is no longer collected -
+          pricing is flat - so there is no vehicle breakdown any more. */}
+      <div className="grid grid-cols-1 gap-6 sm:gap-8">
         {/* Service Package Popularity Card */}
         <div className="bg-charcoal-card rounded-2xl p-4 sm:p-6 border border-charcoal-border/60 shadow-soft-sm space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-charcoal-border/40">
@@ -1347,48 +1329,6 @@ export default function OverviewPage() {
           )}
         </div>
 
-        {/* Vehicle Category Distribution */}
-        <div className="bg-charcoal-card rounded-2xl p-4 sm:p-6 border border-charcoal-border/60 shadow-soft-sm space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-charcoal-border/40">
-            <div className="flex items-center gap-2">
-              <Car className="w-4 h-4 text-sage-600" />
-              <h3 className="text-base font-bold text-charcoal">
-                Vehicle Category Distribution
-              </h3>
-            </div>
-            <span className="text-xs font-semibold text-charcoal-muted">
-              {metrics.totalCars} Total Vehicles
-            </span>
-          </div>
-
-          {carTypeDistribution.length === 0 ? (
-            <p className="text-xs text-charcoal-muted py-6 text-center">No vehicle data in this timeframe.</p>
-          ) : (
-            <div className="space-y-3.5">
-              {carTypeDistribution.map((item) => (
-                <div key={item.key} className="space-y-1.5">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-semibold text-charcoal flex items-center gap-1.5">
-                      <Car className="w-3.5 h-3.5 text-sage-600" />
-                      {item.label}
-                    </span>
-                    <span className="text-charcoal-muted font-medium">
-                      {item.count} cars ({item.percentage}%)
-                    </span>
-                  </div>
-
-                  {/* Progress Bar */}
-                  <div className="w-full h-2 bg-charcoal-surface rounded-full overflow-hidden flex">
-                    <div
-                      style={{ width: `${item.percentage}%` }}
-                      className="bg-sage-600 hover:bg-sage-700 rounded-full transition-all duration-300"
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
       </div>
 
       {/* Period Bookings Activity Explorer / Table */}
@@ -1518,7 +1458,7 @@ export default function OverviewPage() {
                     <Car className="w-3 h-3 shrink-0" />
                     <span>
                       {booking.car_count && booking.car_count > 1 ? `${booking.car_count}x ` : ''}
-                      {CAR_TYPE_LABELS[booking.car_type] || booking.car_type}
+                      {booking.vehicle_make_model || (booking.car_count && booking.car_count > 1 ? 'vehicles' : 'Vehicle')}
                     </span>
                   </span>
                   {booking.assigned_detailer && booking.assigned_detailer !== 'Unassigned' && (
@@ -1630,7 +1570,7 @@ export default function OverviewPage() {
                         <Car className="w-3 h-3 text-charcoal-muted" />
                         <span>
                           {booking.car_count && booking.car_count > 1 ? `${booking.car_count}x ` : ''}
-                          {CAR_TYPE_LABELS[booking.car_type] || booking.car_type}
+                          {booking.vehicle_make_model || (booking.car_count && booking.car_count > 1 ? 'vehicles' : 'Vehicle')}
                         </span>
                       </span>
                     </td>

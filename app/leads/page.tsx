@@ -9,7 +9,7 @@ import {
   LEAD_STATUS_ORDER,
   LEAD_STATUS_STYLES,
 } from '@/types/lead';
-import { SERVICE_LABELS, CAR_TYPE_LABELS } from '@/types/booking';
+import { SERVICE_LABELS } from '@/types/booking';
 import { getLeads, updateLeadStatus, deleteLead, subscribeToLeads } from '@/lib/leads';
 import { resolveInstagram } from '@/lib/instagram';
 import { useAuth } from '@/components/AuthProvider';
@@ -694,13 +694,12 @@ export default function LeadsPage() {
                       </span>
                     )}
 
-                    {(lead.car_type || lead.vehicle_make_model || lead.car_count) && (
+                    {(lead.vehicle_make_model || (lead.car_count ?? 1) > 1) && (
                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-medium bg-charcoal-surface text-charcoal-muted border border-charcoal-border/50">
                         <Car className="w-3 h-3 shrink-0" />
                         <span>
                           {lead.car_count && lead.car_count > 1 ? `${lead.car_count}x ` : ''}
-                          {lead.vehicle_make_model ||
-                            (lead.car_type ? CAR_TYPE_LABELS[lead.car_type] : 'Vehicle')}
+                          {lead.vehicle_make_model || 'vehicles'}
                         </span>
                       </span>
                     )}

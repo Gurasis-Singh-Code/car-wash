@@ -58,7 +58,8 @@ function decodeBookingFromDb(row: any): Booking {
     address: cleanAddress,
     booking_date: row.booking_date,
     booking_time: row.booking_time,
-    car_type: row.car_type,
+    car_type: row.car_type ?? null,
+    vehicle_make_model: row.vehicle_make_model || null,
     has_power: Boolean(row.has_power),
     has_water: Boolean(row.has_water),
     status: row.status,
@@ -188,7 +189,7 @@ export async function addBooking(
     car_count: carCount,
     assigned_detailer: assignedDetailer,
     assigned_detailer_id: data.assigned_detailer_id ?? null,
-    service: normalizeService(data.service) || 'interior_silver',
+    service: normalizeService(data.service) || 'full_gold',
     service_location: data.service_location || 'mobile',
     // Null rather than 0 when left blank, so an unquoted booking stays visibly
     // unquoted instead of counting as a genuine $0 job in the revenue figures.
@@ -206,7 +207,8 @@ export async function addBooking(
     address: cleanAddress,
     booking_date: data.booking_date,
     booking_time: data.booking_time,
-    car_type: data.car_type,
+    car_type: data.car_type ?? null,
+    vehicle_make_model: data.vehicle_make_model?.trim() || null,
     has_power: Boolean(data.has_power),
     has_water: Boolean(data.has_water),
     status: 'scheduled',
@@ -288,6 +290,9 @@ export async function updateBooking(
     ...(data.booking_date !== undefined ? { booking_date: data.booking_date } : {}),
     ...(data.booking_time !== undefined ? { booking_time: data.booking_time } : {}),
     ...(data.car_type !== undefined ? { car_type: data.car_type } : {}),
+    ...(data.vehicle_make_model !== undefined
+      ? { vehicle_make_model: data.vehicle_make_model?.trim() || null }
+      : {}),
     ...(data.has_power !== undefined ? { has_power: Boolean(data.has_power) } : {}),
     ...(data.has_water !== undefined ? { has_water: Boolean(data.has_water) } : {}),
     ...(data.status !== undefined ? { status: data.status } : {}),

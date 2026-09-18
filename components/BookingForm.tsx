@@ -3,15 +3,12 @@
 import React, { useState } from 'react';
 import {
   Booking,
-  CarType,
   ServiceType,
-  ServiceLocation,
   BookingStatus,
   SERVICE_LABELS,
-  CAR_TYPE_LABELS,
+  SERVICE_PRICES,
   STATUS_LABELS,
   BOOKABLE_SERVICES,
-  SERVICE_LOCATION_LABELS,
   SURCHARGE_LABELS,
   ENGINE_BAY_FEE,
   OUT_OF_AREA_FEE,
@@ -128,12 +125,6 @@ interface BookingFormProps {
   initialData?: Partial<Booking>;
   submitButtonLabel?: string;
   isEditing?: boolean;
-  /**
-   * Initial value for the Service Location field on a NEW booking, so arriving
-   * from the Mobile or Shop page pre-selects that channel. The field stays
-   * editable; when editing, the booking's own value wins.
-   */
-  serviceLocation?: ServiceLocation;
   /** Active detailers offered in the Assign Detailer dropdown. */
   detailers?: Detailer[];
 }
@@ -168,7 +159,6 @@ export default function BookingForm({
   initialData,
   submitButtonLabel = 'Create Booking',
   isEditing = false,
-  serviceLocation,
   detailers = [],
 }: BookingFormProps) {
   // Get today in YYYY-MM-DD format for min date validation
@@ -200,21 +190,18 @@ export default function BookingForm({
   const [assignedDetailerId, setAssignedDetailerId] = useState<string>(
     initialData?.assigned_detailer_id || ''
   );
-  const [service, setService] = useState<ServiceType>(initialData?.service || 'interior_silver');
+  const [service, setService] = useState<ServiceType>(initialData?.service || 'full_gold');
 
   // A booking made before a service was retired keeps that value in the list, so
   // opening it for edit cannot silently switch it to a different service.
   const serviceOptions: ServiceType[] = BOOKABLE_SERVICES.includes(service)
     ? BOOKABLE_SERVICES
     : [service, ...BOOKABLE_SERVICES];
-  const [location, setLocation] = useState<ServiceLocation>(
-    initialData?.service_location || serviceLocation || 'mobile'
-  );
   const [status, setStatus] = useState<BookingStatus>(initialData?.status || 'scheduled');
   const [address, setAddress] = useState(initialData?.address || '');
   const [bookingDate, setBookingDate] = useState(initialData?.booking_date || todayDateString);
   const [bookingTime, setBookingTime] = useState(initialData?.booking_time || '09:00:00');
-  const [carType, setCarType] = useState<CarType>(initialData?.car_type || 'sedan');
+  const [vehicleMakeModel, setVehicleMakeModel] = useState(initialData?.vehicle_make_model || '');
   const [hasPower, setHasPower] = useState(initialData?.has_power ?? false);
   const [hasWater, setHasWater] = useState(initialData?.has_water ?? false);
 
@@ -226,6 +213,18 @@ export default function BookingForm({
     engine_bay_fee: engineBayText.trim() === '' ? null : Number(engineBayText),
     out_of_area_fee: outOfAreaText.trim() === '' ? null : Number(outOfAreaText),
   });
+
+  // Changing the package fills in its list price, but never over a figure the
+  // admin typed by hand - only over blank, or over the previous package's own
+  // list price. Editing an existing booking never touches the price.
+  const handleServiceChange = (next: ServiceType) => {
+    const current = priceText.trim();
+    const wasListPrice = current === '' || Number(current) === SERVICE_PRICES[service];
+    setService(next);
+    if (!isEditing && wasListPrice && SERVICE_PRICES[next] != null) {
+      setPriceText(String(SERVICE_PRICES[next]));
+    }
+  };
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -244,13 +243,12 @@ export default function BookingForm({
       setEngineBayText(initialData.engine_bay_fee != null ? String(initialData.engine_bay_fee) : '');
       setOutOfAreaText(initialData.out_of_area_fee != null ? String(initialData.out_of_area_fee) : '');
       setAssignedDetailerId(initialData.assigned_detailer_id || '');
-      setService(initialData.service || 'interior_silver');
-      setLocation(initialData.service_location || 'mobile');
+      setService(initialData.service || 'full_gold');
       setStatus(initialData.status || 'scheduled');
       setAddress(initialData.address || '');
       setBookingDate(initialData.booking_date || todayDateString);
       setBookingTime(initialData.booking_time || '09:00:00');
-      setCarType(initialData.car_type || 'sedan');
+      setVehicleMakeModel(initialData.vehicle_make_model || '');
       setHasPower(initialData.has_power ?? false);
       setHasWater(initialData.has_water ?? false);
     }
@@ -329,12 +327,11 @@ export default function BookingForm({
         (assignedDetailerId ? initialData?.assigned_detailer : undefined) ||
         'Unassigned',
       service,
-      service_location: location,
       status: isEditing ? status : undefined,
       address: address.trim(),
       booking_date: bookingDate,
       booking_time: bookingTime,
-      car_type: carType,
+      vehicle_make_model: vehicleMakeModel.trim() || null,
       has_power: hasPower,
       has_water: hasWater,
     };
@@ -363,8 +360,9 @@ export default function BookingForm({
         setCarCount(1);
         setAssignedDetailerId('');
         setAddress('');
-        setService('interior_silver');
-        setCarType('sedan');
+        setService('full_gold');
+        setVehicleMakeModel('');
+        setPriceText('');
         setBookingDate(todayDateString);
         setBookingTime('09:00:00');
         setHasPower(false);
@@ -586,7 +584,7 @@ export default function BookingForm({
           </div>
         </div>
 
-        {/* Row 3: Service Package & Vehicle Type */}
+        {/* Row 3: Service Package & Vehicle */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
           {/* Service Type */}
           <div>
@@ -599,7 +597,7 @@ export default function BookingForm({
             <select
               id="service"
               value={service}
-              onChange={(e) => setService(e.target.value as ServiceType)}
+              onChange={(e) => handleServiceChange(e.target.value as ServiceType)}
               className="w-full px-3.5 py-2.5 rounded-xl text-base sm:text-sm bg-canvas border border-charcoal-border text-charcoal focus:border-sage-500 focus:bg-charcoal-card transition-colors cursor-pointer"
             >
               {serviceOptions.map((value) => (
@@ -610,31 +608,27 @@ export default function BookingForm({
             </select>
           </div>
 
-          {/* Car Type */}
+          {/* Vehicle: free text, optional. Pricing is flat, so there is no type
+              to pick; this just tells the detailer what is in the driveway. */}
           <div>
             <label
-              htmlFor="car_type"
+              htmlFor="vehicle_make_model"
               className="block text-xs font-semibold uppercase tracking-wider text-charcoal mb-1.5"
             >
-              Vehicle Type <span className="text-red-500">*</span>
+              Vehicle <span className="text-charcoal-muted normal-case font-medium">(optional)</span>
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-charcoal-muted">
                 <Car className="w-4 h-4 text-sage-600" />
               </div>
-              <select
-                id="car_type"
-                value={carType}
-                onChange={(e) => setCarType(e.target.value as CarType)}
-                className="w-full pl-10 pr-3.5 py-2.5 rounded-xl text-base sm:text-sm bg-canvas border border-charcoal-border text-charcoal focus:border-sage-500 focus:bg-charcoal-card transition-colors cursor-pointer"
-              >
-                <option value="sedan">{CAR_TYPE_LABELS.sedan}</option>
-                <option value="hatchback">{CAR_TYPE_LABELS.hatchback}</option>
-                <option value="suv">{CAR_TYPE_LABELS.suv}</option>
-                <option value="van">{CAR_TYPE_LABELS.van}</option>
-                <option value="mini_truck">{CAR_TYPE_LABELS.mini_truck}</option>
-                <option value="other">{CAR_TYPE_LABELS.other}</option>
-              </select>
+              <input
+                id="vehicle_make_model"
+                type="text"
+                value={vehicleMakeModel}
+                onChange={(e) => setVehicleMakeModel(e.target.value)}
+                placeholder="e.g. 2021 Honda CR-V"
+                className="w-full pl-10 pr-3.5 py-2.5 rounded-xl text-base sm:text-sm bg-canvas border border-charcoal-border text-charcoal placeholder:text-charcoal-muted/60 focus:border-sage-500 focus:bg-charcoal-card transition-colors"
+              />
             </div>
           </div>
         </div>
@@ -760,33 +754,6 @@ export default function BookingForm({
               </span>
             </div>
           )}
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5">
-
-          {/* Service Location: which channel the job runs through */}
-          <div>
-            <label
-              htmlFor="service_location"
-              className="block text-xs font-semibold uppercase tracking-wider text-charcoal mb-1.5"
-            >
-              Service Location <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-charcoal-muted">
-                <MapPin className="w-4 h-4 text-sage-600" />
-              </div>
-              <select
-                id="service_location"
-                value={location}
-                onChange={(e) => setLocation(e.target.value as ServiceLocation)}
-                className="w-full pl-10 pr-3.5 py-2.5 rounded-xl text-base sm:text-sm bg-canvas border border-charcoal-border text-charcoal focus:border-sage-500 focus:bg-charcoal-card transition-colors cursor-pointer"
-              >
-                <option value="mobile">{SERVICE_LOCATION_LABELS.mobile}</option>
-                <option value="shop">{SERVICE_LOCATION_LABELS.shop}</option>
-              </select>
-            </div>
-          </div>
         </div>
 
         {/* Row 4: Service Address */}

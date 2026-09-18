@@ -74,7 +74,10 @@ export interface Booking {
   address: string;
   booking_date: string;
   booking_time: string;
-  car_type: CarType;
+  /** No longer collected - pricing is flat. Older rows keep theirs. */
+  car_type?: CarType | null;
+  /** Free text, e.g. "2021 Honda CR-V". Optional; it just tells the detailer what to expect. */
+  vehicle_make_model?: string | null;
   has_power: boolean;
   has_water: boolean;
   status: BookingStatus;
@@ -90,6 +93,19 @@ export interface BookingStats {
 /** Standard surcharges. Prefilled on the form; the stored amount is what counts. */
 export const ENGINE_BAY_FEE = 30;
 export const OUT_OF_AREA_FEE = 20;
+export const PET_HAIR_FEE = 25;
+
+/**
+ * List price per vehicle for each package on offer. Flat - a sedan and an SUV
+ * cost the same - which is why vehicle type is no longer asked. The form uses
+ * this to prefill the price; it stays editable.
+ */
+export const SERVICE_PRICES: Partial<Record<ServiceType, number>> = {
+  interior_gold: 130,
+  full_gold: 160,
+  interior_titanium: 170,
+  full_titanium: 200,
+};
 
 export const SURCHARGE_LABELS = {
   engine_bay: 'Engine bay',
@@ -144,14 +160,10 @@ export const SERVICE_LOCATION_LABELS: Record<ServiceLocation, string> = {
  * can be picked going forward.
  */
 export const BOOKABLE_SERVICES: ServiceType[] = [
-  'interior_silver',
-  'interior_gold',
-  'interior_titanium',
-  'full_silver',
   'full_gold',
+  'interior_gold',
   'full_titanium',
-  'ceramic_tint',
-  'nano_ceramic_tint',
+  'interior_titanium',
 ];
 
 /**

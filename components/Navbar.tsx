@@ -13,15 +13,11 @@ import {
   LogOut,
   LogIn,
   Inbox,
-  Truck,
-  Store,
   Wallet,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
   { href: '/', label: 'Dashboard', icon: Calendar, title: 'Dashboard' },
-  { href: '/mobile', label: 'Mobile', icon: Truck, title: 'Mobile Bookings' },
-  { href: '/shop', label: 'Shop', icon: Store, title: 'Shop Bookings' },
   { href: '/leads', label: 'Leads', icon: Inbox, title: 'Inbound Leads' },
   { href: '/overview', label: 'Overview', icon: BarChart3, title: 'Performance Overview' },
   { href: '/finance', label: 'Finance', icon: Wallet, title: 'Revenue & Expenses' },

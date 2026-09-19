@@ -267,7 +267,7 @@ export default function DetailerManager({
                         onClick={() => handleUnlink(d)}
                         disabled={isBusy}
                         className="ml-auto inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold text-charcoal-muted hover:text-charcoal bg-charcoal-card hover:bg-sage-50 border border-charcoal-border/60 transition-colors disabled:opacity-50"
-                        title="Revoke portal access. Their bookings and payouts are untouched."
+                        title="Revoke portal access. Their bookings and fees are untouched."
                       >
                         <Link2Off className="w-3 h-3" />
                         Unlink

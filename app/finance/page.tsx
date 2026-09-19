@@ -14,21 +14,14 @@ import {
   ExpenseInput,
 } from '@/lib/expenses';
 import { expandExpenses, todayIso } from '@/lib/expenseOccurrences';
-import { Detailer } from '@/types/detailer';
-import { Payout, PayoutStatus } from '@/types/payout';
-import { getDetailers } from '@/lib/detailers';
-import {
-  getPayouts,
-  addPayout,
-  updatePayoutStatus,
-  deletePayout,
-  PayoutInput,
-} from '@/lib/payouts';
+import { BookingFee } from '@/types/fee';
+import { getFees, markWeekPaid, markWeekOwed } from '@/lib/fees';
 import { useAuth } from '@/components/AuthProvider';
 import ExpenseManager from '@/components/ExpenseManager';
-import PayoutManager from '@/components/PayoutManager';
+import FeeManager from '@/components/FeeManager';
 import {
   Wallet,
+  HandCoins,
   RefreshCw,
   AlertCircle,
   Sparkles,
@@ -137,8 +130,7 @@ export default function FinancePage() {
   const { isConfigured } = useAuth();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [detailers, setDetailers] = useState<Detailer[]>([]);
-  const [payouts, setPayouts] = useState<Payout[]>([]);
+  const [fees, setFees] = useState<BookingFee[]>([]);
   const [range, setRange] = useState<Range>('this_month');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -146,16 +138,10 @@ export default function FinancePage() {
   const loadData = useCallback(async () => {
     try {
       setError(null);
-      const [b, e, d, p] = await Promise.all([
-        getBookings(),
-        getExpenses(),
-        getDetailers(),
-        getPayouts(),
-      ]);
+      const [b, e, f] = await Promise.all([getBookings(), getExpenses(), getFees()]);
       setBookings(b);
       setExpenses(e);
-      setDetailers(d);
-      setPayouts(p);
+      setFees(f);
     } catch (err: any) {
       console.error('[FinancePage loadData error]:', err);
       setError(err?.message || 'Failed to load finance data.');
@@ -205,6 +191,36 @@ export default function FinancePage() {
     [earned, bounds]
   );
 
+  const feeByBooking = useMemo(() => {
+    const m = new Map<string, BookingFee>();
+    fees.forEach((f) => m.set(f.booking_id, f));
+    return m;
+  }, [fees]);
+
+  /**
+   * What the business actually earned on a job. Under the current model the
+   * detailer collects the full amount and owes a fixed booking fee, so the fee
+   * is the revenue and the rest never touches the business. A job with no fee
+   * row was completed under the old model, when the business collected the
+   * whole amount itself - so its gross is still the right figure.
+   */
+  const revenueOf = useCallback(
+    (b: Booking): number => {
+      const fee = feeByBooking.get(b.id);
+      return fee ? fee.fee_amount : bookingTotal(b) || 0;
+    },
+    [feeByBooking]
+  );
+
+  const feeStats = useMemo(() => {
+    const inRange = fees.filter((f) => f.completed_on >= bounds.start && f.completed_on <= bounds.end);
+    return {
+      owedAllTime: fees.filter((f) => f.status === 'owed').reduce((sum, f) => sum + f.fee_amount, 0),
+      collectedByDetailers: inRange.reduce((sum, f) => sum + f.customer_total, 0),
+      feeJobs: inRange.length,
+    };
+  }, [fees, bounds]);
+
   /**
    * Recurring expenses are expanded into the individual costs that landed in
    * this window, so a $200/week ad spend counts four times in a month rather
@@ -234,7 +250,7 @@ export default function FinancePage() {
 
     earnedInRange.forEach((b) => {
       const row = ensure(periodKey(b.booking_date, bounds.granularity));
-      const amount = bookingTotal(b) || 0;
+      const amount = revenueOf(b);
       if ((b.service_location || 'mobile') === 'shop') row.revenueShop += amount;
       else row.revenueMobile += amount;
     });
@@ -249,7 +265,7 @@ export default function FinancePage() {
     // No slice: the range itself decides the window now, so the chart shows the
     // whole of what the headline cards are counting and the two cannot disagree.
     return Array.from(map.values()).sort((a, b) => a.key.localeCompare(b.key));
-  }, [earnedInRange, occurrences, bounds]);
+  }, [earnedInRange, occurrences, bounds, revenueOf]);
 
   const totals = useMemo(() => {
     const t = {
@@ -313,36 +329,23 @@ export default function FinancePage() {
 
   const categories = useMemo(() => existingCategories(expenses), [expenses]);
 
-  // Payouts sort by earning date, so a backdated entry has to be re-sorted
-  // rather than simply prepended.
-  const handleAddPayout = async (input: PayoutInput) => {
-    const created = await addPayout(input);
-    setPayouts((prev) =>
-      [created, ...prev].sort((a, b) => (a.earned_on < b.earned_on ? 1 : -1))
-    );
-  };
-
-  const handleTogglePayoutStatus = async (payout: Payout) => {
-    const next: PayoutStatus = payout.status === 'paid' ? 'pending' : 'paid';
-    const previous = [...payouts];
-    setPayouts((prev) => prev.map((p) => (p.id === payout.id ? { ...p, status: next } : p)));
+  const handleMarkWeekPaid = async (detailerId: string, weekStart: string) => {
     try {
-      const updated = await updatePayoutStatus(payout.id, next);
-      setPayouts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+      setError(null);
+      await markWeekPaid(detailerId, weekStart);
+      setFees(await getFees());
     } catch (err: any) {
-      setPayouts(previous);
-      setError(err?.message || 'Failed to update that payout.');
+      setError(err?.message || 'Could not mark that week paid.');
     }
   };
 
-  const handleDeletePayout = async (payout: Payout) => {
-    const previous = [...payouts];
-    setPayouts((prev) => prev.filter((p) => p.id !== payout.id));
+  const handleMarkWeekOwed = async (detailerId: string, weekStart: string) => {
     try {
-      await deletePayout(payout.id);
+      setError(null);
+      await markWeekOwed(detailerId, weekStart);
+      setFees(await getFees());
     } catch (err: any) {
-      setPayouts(previous);
-      setError(err?.message || 'Failed to delete that payout.');
+      setError(err?.message || 'Could not reopen that week.');
     }
   };
 
@@ -373,8 +376,17 @@ export default function FinancePage() {
     {
       title: 'Revenue',
       value: formatMoney(revenueTotal),
-      note: `Completed jobs · ${rangeNote}`,
+      note:
+        feeStats.feeJobs > 0
+          ? `Booking fees on ${feeStats.feeJobs} job${feeStats.feeJobs === 1 ? '' : 's'} · ${formatMoney(feeStats.collectedByDetailers)} collected by detailers`
+          : `Completed jobs · ${rangeNote}`,
       icon: Wallet,
+    },
+    {
+      title: 'Fees outstanding',
+      value: formatMoney(feeStats.owedAllTime),
+      note: 'Owed by detailers, all weeks',
+      icon: HandCoins,
     },
     {
       title: 'Expenses',
@@ -460,7 +472,7 @@ export default function FinancePage() {
 
       {/* Headline figures */}
       <section aria-label="Finance Summary">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-6">
           {statCards.map((card) => {
             const Icon = card.icon;
             return (
@@ -639,18 +651,9 @@ export default function FinancePage() {
         )}
       </section>
 
-      {/* Detailer pay. Kept out of the profit figures above on purpose: a payout
-          is a record of what someone is owed, and the cost of paying them is an
-          expense entry. Rolling one into the other would double count the moment
-          a wages expense is also recorded. */}
-      <PayoutManager
-        payouts={payouts}
-        detailers={detailers}
-        bookings={bookings}
-        onAdd={handleAddPayout}
-        onToggleStatus={handleTogglePayoutStatus}
-        onDelete={handleDeletePayout}
-      />
+      {/* Booking fees: the business's revenue on every job done under the
+          current model, and the record of which weeks have been settled. */}
+      <FeeManager fees={fees} onMarkPaid={handleMarkWeekPaid} onMarkOwed={handleMarkWeekOwed} />
 
       {/* Manual expense entry */}
       <ExpenseManager

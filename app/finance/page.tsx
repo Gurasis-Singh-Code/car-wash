@@ -16,6 +16,9 @@ import {
 import { expandExpenses, todayIso } from '@/lib/expenseOccurrences';
 import { BookingFee } from '@/types/fee';
 import { getFees, markWeekPaid, markWeekOwed } from '@/lib/fees';
+import { Detailer } from '@/types/detailer';
+import { getDetailers } from '@/lib/detailers';
+import DetailerEarnings from '@/components/DetailerEarnings';
 import { useAuth } from '@/components/AuthProvider';
 import ExpenseManager from '@/components/ExpenseManager';
 import FeeManager from '@/components/FeeManager';
@@ -131,6 +134,7 @@ export default function FinancePage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [fees, setFees] = useState<BookingFee[]>([]);
+  const [detailers, setDetailers] = useState<Detailer[]>([]);
   const [range, setRange] = useState<Range>('this_month');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -138,10 +142,11 @@ export default function FinancePage() {
   const loadData = useCallback(async () => {
     try {
       setError(null);
-      const [b, e, f] = await Promise.all([getBookings(), getExpenses(), getFees()]);
+      const [b, e, f, d] = await Promise.all([getBookings(), getExpenses(), getFees(), getDetailers()]);
       setBookings(b);
       setExpenses(e);
       setFees(f);
+      setDetailers(d);
     } catch (err: any) {
       console.error('[FinancePage loadData error]:', err);
       setError(err?.message || 'Failed to load finance data.');
@@ -212,14 +217,40 @@ export default function FinancePage() {
     [feeByBooking]
   );
 
+  /**
+   * The money flow for the range. Every completed job is one of two kinds:
+   * a fee-model job, where the detailer collected the gross and Absolute's
+   * revenue is the fee; or a pre-model job, where the business collected the
+   * gross itself. Revenue is the sum of the two, and this is where the split
+   * is made visible rather than buried.
+   */
   const feeStats = useMemo(() => {
-    const inRange = fees.filter((f) => f.completed_on >= bounds.start && f.completed_on <= bounds.end);
+    const today = todayIso();
+    let feeJobs = 0, feeGross = 0, feeRevenue = 0, legacyJobs = 0, legacyGross = 0;
+    earnedInRange.forEach((b) => {
+      const fee = feeByBooking.get(b.id);
+      if (fee) {
+        feeJobs += 1;
+        feeGross += fee.customer_total;
+        feeRevenue += fee.fee_amount;
+      } else {
+        legacyJobs += 1;
+        legacyGross += bookingTotal(b) || 0;
+      }
+    });
+    const owedRows = fees.filter((f) => f.status === 'owed');
     return {
-      owedAllTime: fees.filter((f) => f.status === 'owed').reduce((sum, f) => sum + f.fee_amount, 0),
-      collectedByDetailers: inRange.reduce((sum, f) => sum + f.customer_total, 0),
-      feeJobs: inRange.length,
+      feeJobs,
+      feeGross,
+      feeRevenue,
+      detailerShare: feeGross - feeRevenue,
+      legacyJobs,
+      legacyGross,
+      bookingsValue: feeGross + legacyGross,
+      owedAllTime: owedRows.reduce((sum, f) => sum + f.fee_amount, 0),
+      overdueAllTime: owedRows.filter((f) => f.due_on < today).reduce((sum, f) => sum + f.fee_amount, 0),
     };
-  }, [fees, bounds]);
+  }, [fees, earnedInRange, feeByBooking]);
 
   /**
    * Recurring expenses are expanded into the individual costs that landed in
@@ -374,18 +405,23 @@ export default function FinancePage() {
 
   const statCards = [
     {
-      title: 'Revenue',
+      title: 'Absolute revenue',
       value: formatMoney(revenueTotal),
       note:
-        feeStats.feeJobs > 0
-          ? `Booking fees on ${feeStats.feeJobs} job${feeStats.feeJobs === 1 ? '' : 's'} · ${formatMoney(feeStats.collectedByDetailers)} collected by detailers`
-          : `Completed jobs · ${rangeNote}`,
+        feeStats.feeJobs > 0 && feeStats.legacyJobs > 0
+          ? `${formatMoney(feeStats.feeRevenue)} in fees on ${feeStats.feeJobs} job${feeStats.feeJobs === 1 ? '' : 's'} + ${formatMoney(feeStats.legacyGross)} on ${feeStats.legacyJobs} pre-fee job${feeStats.legacyJobs === 1 ? '' : 's'}`
+          : feeStats.feeJobs > 0
+            ? `Booking fees on ${feeStats.feeJobs} completed job${feeStats.feeJobs === 1 ? '' : 's'} · ${rangeNote}`
+            : `Completed jobs · ${rangeNote}`,
       icon: Wallet,
     },
     {
       title: 'Fees outstanding',
       value: formatMoney(feeStats.owedAllTime),
-      note: 'Owed by detailers, all weeks',
+      note:
+        feeStats.overdueAllTime > 0
+          ? `${formatMoney(feeStats.overdueAllTime)} overdue · owed by detailers, all weeks`
+          : 'Owed by detailers, all weeks',
       icon: HandCoins,
     },
     {
@@ -503,6 +539,36 @@ export default function FinancePage() {
       </section>
 
       {/* Profit by location */}
+      {/* Where every dollar the customer paid went, for the range. Absolute's
+          revenue is the last box; the first is the number people tend to
+          mistake for it. */}
+      <section
+        aria-label="Money flow"
+        className="bg-charcoal-card rounded-2xl p-4 sm:p-5 border border-charcoal-border/60 shadow-soft-sm"
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-stretch">
+          <div className="rounded-xl border border-charcoal-border/60 bg-canvas p-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-charcoal-muted">Bookings value</p>
+            <p className="mt-1 text-xl font-bold tabular-nums text-charcoal">{formatMoney(feeStats.bookingsValue)}</p>
+            <p className="text-[11px] text-charcoal-muted">What customers paid, {rangeNote}</p>
+          </div>
+          <div className="rounded-xl border border-charcoal-border/60 bg-canvas p-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-charcoal-muted">Detailers kept</p>
+            <p className="mt-1 text-xl font-bold tabular-nums text-charcoal">−{formatMoney(feeStats.detailerShare)}</p>
+            <p className="text-[11px] text-charcoal-muted">Their share on {feeStats.feeJobs} fee-model job{feeStats.feeJobs === 1 ? '' : 's'}</p>
+          </div>
+          <div className="rounded-xl border border-sage-300/70 bg-sage-50/60 p-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-sage-800">Absolute revenue</p>
+            <p className="mt-1 text-xl font-bold tabular-nums text-sage-900">{formatMoney(revenueTotal)}</p>
+            <p className="text-[11px] text-sage-800/80">
+              {feeStats.legacyJobs > 0
+                ? `Fees ${formatMoney(feeStats.feeRevenue)} + pre-fee gross ${formatMoney(feeStats.legacyGross)}`
+                : 'Booking fees only'}
+            </p>
+          </div>
+        </div>
+      </section>
+
       <section
         aria-label="Revenue and Expense Trend"
         className="bg-charcoal-card rounded-2xl p-4 sm:p-5 border border-charcoal-border/60 shadow-soft-sm space-y-3.5"
@@ -653,6 +719,8 @@ export default function FinancePage() {
 
       {/* Booking fees: the business's revenue on every job done under the
           current model, and the record of which weeks have been settled. */}
+      <DetailerEarnings completedInRange={earnedInRange} fees={fees} detailers={detailers} rangeLabel={RANGE_LABELS[range]} />
+
       <FeeManager fees={fees} onMarkPaid={handleMarkWeekPaid} onMarkOwed={handleMarkWeekOwed} />
 
       {/* Manual expense entry */}

@@ -71,6 +71,8 @@ export interface Booking {
   service: ServiceType;
   /** Mobile visit or in-shop job. Defaults to 'mobile' for pre-existing rows. */
   service_location?: ServiceLocation;
+  /** How the booking was acquired: 'manual', 'instagram_dm' or 'website'. */
+  source?: string;
   address: string;
   booking_date: string;
   booking_time: string;
@@ -195,6 +197,31 @@ const ROW_ACCENTS: Record<string, string> = {
   ceramic_tint: TINT_ROW,
   nano_ceramic_tint: TINT_ROW,
 };
+
+/**
+ * Bookings that arrive from the website form have had no conversation yet — the
+ * customer is waiting on a confirmation call — so they read as amber rather than
+ * sage, and carry a small badge. Applied on top of the service accent.
+ */
+const WEBSITE_CARD =
+  'bg-amber-50 dark:bg-amber-500/10 border-amber-300/80 dark:border-amber-400/40 border-l-4 border-l-amber-500 dark:border-l-amber-400 hover:border-amber-400';
+const WEBSITE_ROW =
+  'bg-amber-50/70 dark:bg-amber-500/10 hover:bg-amber-100/70 dark:hover:bg-amber-500/20';
+export const WEBSITE_BADGE = 'bg-amber-100 text-amber-900 border-amber-300';
+
+export function isWebsiteBooking(b: { source?: string | null }): boolean {
+  return b.source === 'website';
+}
+
+/** Card classes for a whole booking: website origin wins, then the service accent. */
+export function bookingCardAccent(b: { source?: string | null; service?: string }, fallback: string = DEFAULT_CARD_ACCENT): string {
+  return isWebsiteBooking(b) ? WEBSITE_CARD : serviceCardAccent(b.service, fallback);
+}
+
+/** Row classes for a whole booking, same precedence as bookingCardAccent. */
+export function bookingRowAccent(b: { source?: string | null; service?: string }): string {
+  return isWebsiteBooking(b) ? WEBSITE_ROW : serviceRowAccent(b.service);
+}
 
 export const DEFAULT_CARD_ACCENT =
   'bg-charcoal-card border-charcoal-border/60 hover:border-sage-300/80';

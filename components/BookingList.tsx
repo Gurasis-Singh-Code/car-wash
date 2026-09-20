@@ -7,6 +7,9 @@ import {
   STATUS_LABELS,
   BookingStatus,
   serviceCardAccent,
+  bookingCardAccent,
+  isWebsiteBooking,
+  WEBSITE_BADGE,
   serviceBadgeAccent,
   bookingTotal,
   SURCHARGE_LABELS,
@@ -39,6 +42,7 @@ import {
   X,
   Loader2,
   Instagram,
+  Globe,
   Mail,
   UserPlus,
 } from 'lucide-react';
@@ -401,8 +405,8 @@ export default function BookingList({
             return (
               <div
                 key={booking.id}
-                className={`rounded-xl p-3.5 sm:p-5 border shadow-soft-sm hover:shadow-soft-md transition-all duration-200 ${serviceCardAccent(
-                  booking.service
+                className={`rounded-xl p-3.5 sm:p-5 border shadow-soft-sm hover:shadow-soft-md transition-all duration-200 ${bookingCardAccent(
+                  booking
                 )}`}
               >
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4">
@@ -413,6 +417,16 @@ export default function BookingList({
                       <h3 className="text-sm sm:text-base font-bold text-charcoal tracking-tight mr-1">
                         {booking.customer_name}
                       </h3>
+
+                      {isWebsiteBooking(booking) && (
+                        <span
+                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${WEBSITE_BADGE}`}
+                          title="Requested through the website form - not confirmed with the customer yet"
+                        >
+                          <Globe className="w-3 h-3" />
+                          Website
+                        </span>
+                      )}
 
                       {/* Client Phone Link - High-visibility touch target */}
                       {(booking.number || booking.client_no) && (

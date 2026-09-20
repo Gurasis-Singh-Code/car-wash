@@ -7,6 +7,8 @@ import {
   BookingStatus,
   SERVICE_LABELS,
   serviceCardAccent,
+  bookingCardAccent,
+  bookingRowAccent,
   serviceRowAccent,
 } from '@/types/booking';
 import { getBookings, subscribeToBookings } from '@/lib/bookings';
@@ -1431,8 +1433,8 @@ export default function OverviewPage() {
             {filteredTableBookings.map((booking) => (
               <div
                 key={booking.id}
-                className={`rounded-xl border p-3 space-y-2 ${serviceCardAccent(
-                  booking.service,
+                className={`rounded-xl border p-3 space-y-2 ${bookingCardAccent(
+                  booking,
                   'border-charcoal-border/60 bg-canvas'
                 )}`}
               >
@@ -1522,7 +1524,7 @@ export default function OverviewPage() {
                 {filteredTableBookings.map((booking) => (
                   <tr
                     key={booking.id}
-                    className={`transition-colors ${serviceRowAccent(booking.service)}`}
+                    className={`transition-colors ${bookingRowAccent(booking)}`}
                   >
                     {/* Date & Time */}
                     <td className="py-3 px-3 whitespace-nowrap">

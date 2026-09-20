@@ -96,6 +96,8 @@ export interface BookingStats {
 export const ENGINE_BAY_FEE = 30;
 export const OUT_OF_AREA_FEE = 20;
 export const PET_HAIR_FEE = 25;
+/** Of which Absolute's share is $10; the detailer keeps $15. Mirrors sync_booking_fee(). */
+export const PET_HAIR_FEE_TO_ABSOLUTE = 10;
 
 /**
  * List price per vehicle for each package on offer. Flat - a sedan and an SUV

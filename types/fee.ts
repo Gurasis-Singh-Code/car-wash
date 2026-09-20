@@ -15,6 +15,8 @@ export interface BookingFee {
   detailer_id: string;
   service: string;
   customer_total: number;
+  /** Included in fee_amount. $10 of the $25 pet hair add-on is Absolute's. */
+  pet_hair_fee: number;
   fee_amount: number;
   status: FeeStatus;
   completed_on: string;

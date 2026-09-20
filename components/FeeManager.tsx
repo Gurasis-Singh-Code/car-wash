@@ -140,7 +140,10 @@ export default function FeeManager({ fees, onMarkPaid, onMarkOwed }: FeeManagerP
                         <span className="min-w-0 truncate text-charcoal">
                           {f.completed_on} · {SERVICE_LABELS[f.service] || f.service}
                           {f.customer_name ? ` · ${f.customer_name}` : ''}
-                          <span className="text-charcoal-muted"> · collected {formatMoney(f.customer_total)}</span>
+                          <span className="text-charcoal-muted">
+                            {' '}· collected {formatMoney(f.customer_total)}
+                            {f.pet_hair_fee > 0 ? ` · incl. ${formatMoney(f.pet_hair_fee)} pet hair` : ''}
+                          </span>
                         </span>
                         <span className="shrink-0 font-semibold tabular-nums text-charcoal">{formatMoney(f.fee_amount)}</span>
                       </li>

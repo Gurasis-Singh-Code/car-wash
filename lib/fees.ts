@@ -11,6 +11,7 @@ function decodeFee(row: any): BookingFee {
     service: row.service,
     customer_total: Number(row.customer_total ?? 0),
     fee_amount: Number(row.fee_amount ?? 0),
+    pet_hair_fee: Number(row.pet_hair_fee ?? 0),
     status: row.status,
     completed_on: row.completed_on,
     week_start: row.week_start,

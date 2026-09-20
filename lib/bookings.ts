@@ -41,6 +41,9 @@ function decodeBookingFromDb(row: any): Booking {
     car_count,
     assigned_detailer,
     assigned_detailer_id: row.assigned_detailer_id || null,
+    // How the booking was acquired. The website accent keys off this, so a
+    // decoder that drops it makes every website booking look like any other.
+    source: row.source ?? undefined,
     assignment_status: row.assignment_status ?? null,
     offered_at: row.offered_at ?? null,
     last_declined_by: row.last_declined_by ?? null,

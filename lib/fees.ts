@@ -1,5 +1,6 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 import { BookingFee } from '@/types/fee';
+import { todayIso } from './expenseOccurrences';
 
 function decodeFee(row: any): BookingFee {
   const d = Array.isArray(row.detailers) ? row.detailers[0] : row.detailers;
@@ -15,6 +16,7 @@ function decodeFee(row: any): BookingFee {
     status: row.status,
     completed_on: row.completed_on,
     week_start: row.week_start,
+    due_on: row.due_on,
     paid_at: row.paid_at ?? null,
     paid_note: row.paid_note ?? null,
     detailer_name: d?.name,
@@ -62,6 +64,8 @@ export interface DetailerWeek {
   detailer_id: string;
   detailer_name: string;
   week_start: string;
+  due_on: string;
+  overdue: boolean;
   fees: BookingFee[];
   collected: number;
   owed: number;
@@ -79,6 +83,8 @@ export function groupByDetailerWeek(fees: BookingFee[]): DetailerWeek[] {
         detailer_id: f.detailer_id,
         detailer_name: f.detailer_name || 'Unknown',
         week_start: f.week_start,
+        due_on: f.due_on,
+        overdue: false,
         fees: [],
         collected: 0,
         owed: 0,
@@ -91,6 +97,8 @@ export function groupByDetailerWeek(fees: BookingFee[]): DetailerWeek[] {
     if (f.status === 'paid') g.paid += f.fee_amount;
     else g.owed += f.fee_amount;
   }
+  const today = todayIso();
+  map.forEach((g) => { g.overdue = g.owed > 0 && g.due_on < today; });
   return Array.from(map.values()).sort((a, b) =>
     a.week_start === b.week_start ? a.detailer_name.localeCompare(b.detailer_name) : a.week_start < b.week_start ? 1 : -1
   );

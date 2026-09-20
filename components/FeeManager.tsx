@@ -37,6 +37,7 @@ export default function FeeManager({ fees, onMarkPaid, onMarkOwed }: FeeManagerP
   const [openKey, setOpenKey] = useState<string | null>(null);
 
   const totalOwed = fees.filter((f) => f.status === 'owed').reduce((s, f) => s + f.fee_amount, 0);
+  const totalOverdue = weeks.filter((w) => w.overdue).reduce((s, w) => s + w.owed, 0);
 
   const run = async (key: string, fn: () => Promise<void>) => {
     setBusyKey(key);
@@ -66,9 +67,12 @@ export default function FeeManager({ fees, onMarkPaid, onMarkOwed }: FeeManagerP
         </div>
         <div className="text-right shrink-0">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-charcoal-muted">Outstanding</p>
-          <p className={`text-lg font-bold tabular-nums ${totalOwed > 0 ? 'text-amber-700' : 'text-emerald-700'}`}>
+          <p className={`text-lg font-bold tabular-nums ${totalOverdue > 0 ? 'text-red-700' : totalOwed > 0 ? 'text-amber-700' : 'text-emerald-700'}`}>
             {formatMoney(totalOwed)}
           </p>
+          {totalOverdue > 0 && (
+            <p className="text-[11px] font-semibold text-red-700">{formatMoney(totalOverdue)} overdue</p>
+          )}
         </div>
       </div>
 
@@ -99,14 +103,19 @@ export default function FeeManager({ fees, onMarkPaid, onMarkOwed }: FeeManagerP
                       </p>
                       <p className="text-[11px] text-charcoal-muted">
                         {w.fees.length} job{w.fees.length === 1 ? '' : 's'} · they collected {formatMoney(w.collected)}
+                        {!settled && (
+                          <span className={w.overdue ? ' font-semibold text-red-700' : ''}>
+                            {' '}· {w.overdue ? 'overdue since' : 'due'} {w.due_on}
+                          </span>
+                        )}
                       </p>
                     </div>
                   </button>
 
                   <div className="text-right shrink-0">
                     <p className="text-sm font-bold tabular-nums text-charcoal">{formatMoney(w.owed + w.paid)}</p>
-                    <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold border ${settled ? FEE_STATUS_STYLES.paid : FEE_STATUS_STYLES.owed}`}>
-                      {settled ? 'Paid' : `${formatMoney(w.owed)} owed`}
+                    <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold border ${settled ? FEE_STATUS_STYLES.paid : w.overdue ? 'bg-red-50 text-red-700 border-red-200/60' : FEE_STATUS_STYLES.owed}`}>
+                      {settled ? 'Paid' : w.overdue ? `${formatMoney(w.owed)} overdue` : `${formatMoney(w.owed)} owed`}
                     </span>
                   </div>
 

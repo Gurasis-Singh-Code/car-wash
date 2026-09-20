@@ -21,6 +21,8 @@ export interface BookingFee {
   status: FeeStatus;
   completed_on: string;
   week_start: string;
+  /** 7 days after the week ends. Set by the database. */
+  due_on: string;
   paid_at: string | null;
   paid_note: string | null;
   /** Joined for display. */

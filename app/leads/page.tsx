@@ -43,6 +43,9 @@ import {
   ExternalLink,
 } from 'lucide-react';
 
+/** Leads created from this instant count toward the conversion rate. Toronto midnight, 18 Sep 2026. */
+const MEASURE_FROM = '2026-09-18T04:00:00.000Z';
+
 /**
  * Human-friendly relative time, e.g. "5m ago", "3h ago", "2d ago".
  */
@@ -114,6 +117,10 @@ export default function LeadsPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [statusFilter, setStatusFilter] = useState<LeadStatus | 'all'>('all');
+  // Measurement window. The pipeline was reset on 18 Sep 2026 - new packages,
+  // new prices, new fee model - so the conversion rate is measured from there.
+  // Older leads are still on file and reachable through 'All time'.
+  const [measureWindow, setMeasureWindow] = useState<'current' | 'all'>('current');
   const [searchQuery, setSearchQuery] = useState('');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [deletingLead, setDeletingLead] = useState<Lead | null>(null);
@@ -150,6 +157,11 @@ export default function LeadsPage() {
     };
   }, [loadLeads]);
 
+  const measured = useMemo(
+    () => (measureWindow === 'all' ? leads : leads.filter((l) => l.created_at >= MEASURE_FROM)),
+    [leads, measureWindow]
+  );
+
   // Counts per pipeline stage
   const statusCounts = useMemo(() => {
     const counts: Record<LeadStatus, number> = {
@@ -160,14 +172,14 @@ export default function LeadsPage() {
       converted: 0,
       lost: 0,
     };
-    leads.forEach((l) => {
+    measured.forEach((l) => {
       if (counts[l.lead_status] !== undefined) counts[l.lead_status] += 1;
     });
     return counts;
-  }, [leads]);
+  }, [measured]);
 
   const metrics = useMemo(() => {
-    const total = leads.length;
+    const total = measured.length;
     const converted = statusCounts.converted;
     // Everything still moving through the funnel (not yet won or lost)
     const active =
@@ -183,12 +195,12 @@ export default function LeadsPage() {
       lost: statusCounts.lost,
       conversionRate: total > 0 ? Math.round((converted / total) * 100) : 0,
     };
-  }, [leads, statusCounts]);
+  }, [measured, statusCounts]);
 
   const filteredLeads = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
 
-    return leads.filter((lead) => {
+    return measured.filter((lead) => {
       if (statusFilter !== 'all' && lead.lead_status !== statusFilter) return false;
       if (!q) return true;
 
@@ -204,7 +216,7 @@ export default function LeadsPage() {
           lead.last_message?.toLowerCase().includes(q)
       );
     });
-  }, [leads, statusFilter, searchQuery]);
+  }, [measured, statusFilter, searchQuery]);
 
   const handleStatusChange = async (lead: Lead, newStatus: LeadStatus) => {
     if (lead.lead_status === newStatus) return;
@@ -378,6 +390,33 @@ export default function LeadsPage() {
           <span>{error}</span>
         </div>
       )}
+
+      {/* Measurement window */}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div role="tablist" aria-label="Measurement window" className="inline-flex items-center gap-1 p-1 bg-canvas border border-charcoal-border/70 rounded-2xl shadow-soft-xs">
+          {([['current', 'Since 18 Sep 2026'], ['all', 'All time']] as const).map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              role="tab"
+              aria-selected={measureWindow === key}
+              onClick={() => setMeasureWindow(key)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+                measureWindow === key
+                  ? 'bg-sage-100 text-sage-900 shadow-soft-xs border border-sage-300'
+                  : 'text-charcoal-muted hover:text-sage-800 hover:bg-sage-50/70'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <p className="text-[11px] sm:text-xs text-charcoal-muted">
+          {measureWindow === 'current'
+            ? 'Pipeline reset on 18 Sep: new packages, prices and fee model. Older leads are under All time.'
+            : `Everything on file, including ${leads.filter((l) => l.created_at < MEASURE_FROM).length} leads from before the reset.`}
+        </p>
+      </div>
 
       {/* KPI Cards */}
       <section aria-label="Lead Metrics" className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-6">
